@@ -109,10 +109,16 @@ async def leave(ctx):
     
     Remove()
 
-
-
-
-
+@play.before_invoke
+async def ensure_voice(ctx):
+    if ctx.voice_client is None:
+        if ctx.author.voice:
+            await ctx.author.voice.channel.connect()
+        else:
+            await ctx.send("You are not connected to a voice channel.")
+            raise commands.CommandError("Author not connected to a voice channel.")
+    elif ctx.voice_client.is_playing():
+        ctx.voice_client.stop()
 
 
 youtube_dl.utils.bug_reports_message = lambda: ''
