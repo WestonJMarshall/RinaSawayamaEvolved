@@ -33,7 +33,7 @@ async def skip(ctx):
     Check_Queue()
 
 
-@bot.command(name='play', help='To play song')
+@bot.command(name='play', help='Plays a song with a predownload from YouTube')
 async def play(ctx,url):
     server = ctx.message.guild
     global voice_channel
@@ -45,6 +45,15 @@ async def play(ctx,url):
         if(q.qsize() == 1 and not(voice_channel.is_playing())):
             voice_channel.play(discord.FFmpegPCMAudio(executable="ffmpeg.exe", source=q.get()), after=lambda x: Check_Queue())
     await ctx.send('**Added Audio:** {}'.format(filename))
+
+#@bot.command(name='stream', help='Streams a song directly from YouTube')
+#async def stream(ctx, *, url):
+
+    #async with ctx.typing():
+        #player = await YTDLSource.from_url(url, loop=bot.loop, stream=True)
+        #ctx.voice_client.play(player, after=lambda e: print(f'Player error: {e}') if e else None)
+
+    #await ctx.send(f'Now playing: {player.title}')
 
 def Check_Queue():
 
@@ -111,8 +120,10 @@ async def leave(ctx):
 
 @play.before_invoke
 async def ensure_voice(ctx):
-    if ctx.voice_client is None:
+    if (ctx.voice_client is None) or (ctx.voice_client.channel is not ctx.author.voice.channel):
         if ctx.author.voice:
+            if ctx.voice_client is not None:
+                await ctx.voice_client.disconnect()
             await ctx.author.voice.channel.connect()
         else:
             await ctx.send("You are not connected to a voice channel.")
