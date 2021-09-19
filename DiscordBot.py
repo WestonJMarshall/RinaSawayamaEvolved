@@ -1,4 +1,7 @@
 # DiscordBot.py
+
+#region Imports
+from pathlib import Path
 import os
 import discord
 from discord.ext import commands, tasks
@@ -9,7 +12,10 @@ import youtube_dl
 import asyncio
 import glob
 from queue import Queue
+#endregion
 
+
+#region Startup & Globals
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 
@@ -20,12 +26,24 @@ bot = commands.Bot(command_prefix='!',intents=intents)
 
 q = Queue(maxsize = 16)
 voice_channel = None
+#endregion
 
+
+#region Response Commands
 @bot.command(name='cringe')
 async def cringe(ctx):
     response = '<:suffer:885330089523437638>'
     await ctx.send(response)
 
+@bot.command(name='deleteF')
+async def deleteF(ctx):
+    response = 'Deleting'
+    await ctx.send(response)
+    Remove("DownloadsABC123/")
+#endregion
+
+
+#region Music Commands
 @bot.command(name='skip')
 async def skip(ctx):
     await stop(ctx)
@@ -89,22 +107,13 @@ async def stop(ctx):
 
 @bot.command(name='join', help='Tells the bot to join the voice channel')
 async def join(ctx):
-    Remove()
+    Remove("DownloadsABC123/")
     if not ctx.message.author.voice:
         await ctx.send("{} is not connected to a voice channel".format(ctx.message.author.name))
         return
     else:
         channel = ctx.message.author.voice.channel
     await channel.connect()
-
-def Remove():
-    for file in glob.glob('*.m4a'):
-        os.remove(file)
-    for file in glob.glob('*.mp3'):
-        os.remove(file)
-    for file in glob.glob('*.webm'):
-        os.remove(file)
-
 
 @bot.command(name='leave', help='To make the bot leave the voice channel')
 async def leave(ctx):
@@ -116,7 +125,7 @@ async def leave(ctx):
     await voice_client.disconnect()
     await asyncio.sleep(1000)
     
-    Remove()
+    Remove("DownloadsABC123/")
 
 @play.before_invoke
 async def ensure_voice(ctx):
@@ -130,8 +139,29 @@ async def ensure_voice(ctx):
             raise commands.CommandError("Author not connected to a voice channel.")
     elif ctx.voice_client.is_playing():
         ctx.voice_client.stop()
+#endregion
+
+#region Helper Functions
+def Remove(path):
+    #Check if folder path exists, create one if it doesn't
+    root = Path().absolute()
+    print(root)
+    full = root.joinpath(path)
+    print(full)
+    if not(os.path.exists(full) and os.path.isdir(full)):
+        print('No Downloads Folder')
+        os.makedirs(full)
+    #Delete all files in the path
+    files = os.listdir(full)
+    for file in files:
+        fileFull = full.joinpath(file)
+        print(fileFull)
+        os.remove(fileFull)
+    print('Complete')
+#endregion
 
 
+#region Youtube-DL Functionality
 youtube_dl.utils.bug_reports_message = lambda: ''
 
 ytdl_format_options = {
@@ -177,7 +207,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         else:
             filename = data['title'] if stream else ytdl.prepare_filename(data)
         return filename.split('.')[0] + ".mp3"
-
+#endregion
 
 
 bot.run(TOKEN)
