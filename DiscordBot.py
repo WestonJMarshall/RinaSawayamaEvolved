@@ -59,28 +59,25 @@ async def play(ctx,url):
     voice_channel = server.voice_client
 
     async with ctx.typing():
-        filename = await YTDLSource.from_url(url, loop=bot.loop)
-        q.put(filename)
+        player = await YTDLSource.from_url(url, loop=bot.loop)
+        q.put(player)
         if(q.qsize() == 1 and not(voice_channel.is_playing())):
-            voice_channel.play(discord.FFmpegPCMAudio(executable="ffmpeg.exe", source=q.get()), after=lambda x: Check_Queue())
-    await ctx.send('**Added Audio:** {}'.format(filename))
+            voice_channel.play(source=q.get(), after=lambda x: Check_Queue())
+    await ctx.send('**Added Audio:** {}'.format(player))
 
-#@bot.command(name='stream', help='Streams a song directly from YouTube')
-#async def stream(ctx, *, url):
+@bot.command(name='stream', help='Streams a song directly from YouTube')
+async def stream(ctx, *, url):
+    server = ctx.message.guild
+    global voice_channel
+    voice_channel = server.voice_client
 
-    #async with ctx.typing():
-        #player = await YTDLSource.from_url(url, loop=bot.loop, stream=True)
-        #ctx.voice_client.play(player, after=lambda e: print(f'Player error: {e}') if e else None)
+    async with ctx.typing():
+        player = await YTDLSource.from_url(url, loop=bot.loop, stream=True)
+        q.put(player)
+        if(q.qsize() == 1 and not(voice_channel.is_playing())):
+            voice_channel.play(source=q.get(), after=lambda x: Check_Queue())
+        await ctx.send('**Added Audio:** {}'.format(player))
 
-    #await ctx.send(f'Now playing: {player.title}')
-
-def Check_Queue():
-
-    #ctx.send("hit!")
-    if(q.qsize() > 0):
-        #server = ctx.message.guild
-        #voice_channel = server.voice_client
-        voice_channel.play(discord.FFmpegPCMAudio(executable="ffmpeg.exe", source=q.get()), after=lambda x: Check_Queue())
 
 @bot.command(name='pause', help='This command pauses the song')
 async def pause(ctx):
@@ -102,7 +99,7 @@ async def resume(ctx):
 async def stop(ctx):
     voice_client = ctx.message.guild.voice_client
     if voice_client.is_playing():
-        await voice_client.stop()
+        voice_client.stop()
     else:
         await ctx.send("The bot is not playing anything at the moment.")
 
@@ -129,6 +126,7 @@ async def leave(ctx):
     Remove("TempDownloads/")
 
 @play.before_invoke
+@stream.before_invoke
 async def ensure_voice(ctx):
     if (ctx.voice_client is None) or (ctx.voice_client.channel is not ctx.author.voice.channel):
         if ctx.author.voice:
@@ -138,8 +136,6 @@ async def ensure_voice(ctx):
         else:
             await ctx.send("You are not connected to a voice channel.")
             raise commands.CommandError("Author not connected to a voice channel.")
-    elif ctx.voice_client.is_playing():
-        ctx.voice_client.stop()
 #endregion
 
 #region Helper Functions
@@ -153,8 +149,11 @@ def Remove(path):
     files = os.listdir(full)
     for file in files:
         fileFull = full.joinpath(file)
-        print(fileFull)
         os.remove(fileFull)
+
+def Check_Queue():
+    if(q.qsize() > 0):
+        voice_channel.play(source=q.get(), after=lambda x: Check_Queue())        
 #endregion
 
 
@@ -169,7 +168,7 @@ ytdl_format_options = {
         'key': 'FFmpegExtractAudio',
         'preferredcodec': 'mp3',
         'preferredquality': '192', }],
-    'restrictfilenames': True,
+    'restrictfilenames': False,
     'noplaylist': True,
     'nocheckcertificate': True,
     'ignoreerrors': False,
@@ -198,29 +197,12 @@ class YTDLSource(discord.PCMVolumeTransformer):
         loop = loop or asyncio.get_event_loop()
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
         if 'entries' in data:
-            # take first item from a playlist
             data = data['entries'][0]
         if path.exists(data['title']) or path.exists(data['title'] + '.mp3'):
             filename = data['title']
         else:
             filename = ytdl.prepare_filename(data)
-        return filename.split('.')[0] + ".mp3"
-
-    @classmethod
-    async def stream_from_url(cls, url, *, loop=None, stream=True):
-        loop = loop or asyncio.get_event_loop()
-        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download = stream))
-
-
-
-        if 'entries' in data:
-            # take first item from a playlist
-            data = data['entries'][0]
-        if(path.exists(data['title']) or path.exists(data['title'] + '.mp3')):
-            filename = data['title']
-        else:
-            filename = data['title'] if stream else ytdl.prepare_filename(data)
-        return filename.split('.')[0] + ".mp3"
+        return cls(discord.FFmpegPCMAudio(filename.split('.')[0] + ".mp3"), data=data)
 #endregion
 
 
