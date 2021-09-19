@@ -51,7 +51,6 @@ async def skip(ctx):
     await asyncio.sleep(1000)
     Check_Queue()
 
-
 @bot.command(name='play', help='Plays a song with a predownload from YouTube')
 async def play(ctx,url):
     server = ctx.message.guild
@@ -77,7 +76,6 @@ async def stream(ctx, *, url):
         if(q.qsize() == 1 and not(voice_channel.is_playing())):
             voice_channel.play(source=q.get(), after=lambda x: Check_Queue())
         await ctx.send('**Added Audio:** {}'.format(player))
-
 
 @bot.command(name='pause', help='This command pauses the song')
 async def pause(ctx):
@@ -137,6 +135,7 @@ async def ensure_voice(ctx):
             await ctx.send("You are not connected to a voice channel.")
             raise commands.CommandError("Author not connected to a voice channel.")
 #endregion
+
 
 #region Helper Functions
 def Remove(path):
