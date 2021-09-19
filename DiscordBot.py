@@ -25,7 +25,7 @@ client = discord.Client(intents=intents)
 
 bot = commands.Bot(command_prefix='!',intents=intents)
 
-q = Queue(maxsize = 16)
+q = Queue(maxsize = 32)
 voice_channel = None
 #endregion
 
@@ -51,6 +51,15 @@ async def skip(ctx):
     await asyncio.sleep(1000)
     Check_Queue()
 
+@bot.command(name='queue')
+async def queue(ctx):
+    s = 'Queued Items: \n'
+    i = 0
+    for qi in q.queue:
+        i += 1
+        s += '[' + str(i) + ']' + ' ' + qi.title + '\n'
+    await ctx.send(s)
+
 @bot.command(name='play', help='Plays a song with a predownload from YouTube')
 async def play(ctx,url):
     server = ctx.message.guild
@@ -62,7 +71,7 @@ async def play(ctx,url):
         q.put(player)
         if(q.qsize() == 1 and not(voice_channel.is_playing())):
             voice_channel.play(source=q.get(), after=lambda x: Check_Queue())
-    await ctx.send('**Added Audio:** {}'.format(player))
+    await ctx.send('**Added Audio:** {}'.format(player.title))
 
 @bot.command(name='stream', help='Streams a song directly from YouTube')
 async def stream(ctx, *, url):
@@ -75,7 +84,7 @@ async def stream(ctx, *, url):
         q.put(player)
         if(q.qsize() == 1 and not(voice_channel.is_playing())):
             voice_channel.play(source=q.get(), after=lambda x: Check_Queue())
-        await ctx.send('**Added Audio:** {}'.format(player))
+        await ctx.send('**Added Audio:** {}'.format(player.title))
 
 @bot.command(name='pause', help='This command pauses the song')
 async def pause(ctx):
