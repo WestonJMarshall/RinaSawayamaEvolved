@@ -2,9 +2,10 @@
 
 #region Imports
 from pathlib import Path
+import shutil
 import os
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 from dotenv import load_dotenv
 import os.path
 from os import path
@@ -39,7 +40,7 @@ async def cringe(ctx):
 async def deleteF(ctx):
     response = 'Deleting'
     await ctx.send(response)
-    Remove("DownloadsABC123/")
+    Remove("TempDownloads/")
 #endregion
 
 
@@ -107,7 +108,7 @@ async def stop(ctx):
 
 @bot.command(name='join', help='Tells the bot to join the voice channel')
 async def join(ctx):
-    Remove("DownloadsABC123/")
+    Remove("TempDownloads/")
     if not ctx.message.author.voice:
         await ctx.send("{} is not connected to a voice channel".format(ctx.message.author.name))
         return
@@ -125,7 +126,7 @@ async def leave(ctx):
     await voice_client.disconnect()
     await asyncio.sleep(1000)
     
-    Remove("DownloadsABC123/")
+    Remove("TempDownloads/")
 
 @play.before_invoke
 async def ensure_voice(ctx):
@@ -145,11 +146,8 @@ async def ensure_voice(ctx):
 def Remove(path):
     #Check if folder path exists, create one if it doesn't
     root = Path().absolute()
-    print(root)
     full = root.joinpath(path)
-    print(full)
     if not(os.path.exists(full) and os.path.isdir(full)):
-        print('No Downloads Folder')
         os.makedirs(full)
     #Delete all files in the path
     files = os.listdir(full)
@@ -157,7 +155,6 @@ def Remove(path):
         fileFull = full.joinpath(file)
         print(fileFull)
         os.remove(fileFull)
-    print('Complete')
 #endregion
 
 
@@ -167,6 +164,7 @@ youtube_dl.utils.bug_reports_message = lambda: ''
 ytdl_format_options = {
     'format': 'bestaudio/best',
     'continue_dl': True,
+    'outtmpl': 'TempDownloads/%(extractor)s-%(id)s-%(title)s.%(ext)s',
     'postprocessors': [{
         'key': 'FFmpegExtractAudio',
         'preferredcodec': 'mp3',
@@ -199,6 +197,22 @@ class YTDLSource(discord.PCMVolumeTransformer):
     async def from_url(cls, url, *, loop=None, stream=False):
         loop = loop or asyncio.get_event_loop()
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
+        if 'entries' in data:
+            # take first item from a playlist
+            data = data['entries'][0]
+        if path.exists(data['title']) or path.exists(data['title'] + '.mp3'):
+            filename = data['title']
+        else:
+            filename = ytdl.prepare_filename(data)
+        return filename.split('.')[0] + ".mp3"
+
+    @classmethod
+    async def stream_from_url(cls, url, *, loop=None, stream=True):
+        loop = loop or asyncio.get_event_loop()
+        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download = stream))
+
+
+
         if 'entries' in data:
             # take first item from a playlist
             data = data['entries'][0]
