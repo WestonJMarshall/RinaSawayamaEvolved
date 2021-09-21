@@ -2,7 +2,7 @@
 
 #region Imports
 from pathlib import Path
-import shutil
+import atexit
 import os
 import discord
 from discord.ext import commands
@@ -11,7 +11,6 @@ import os.path
 from os import path
 import youtube_dl
 import asyncio
-import glob
 from queue import Queue
 #endregion
 
@@ -35,12 +34,6 @@ voice_channel = None
 async def cringe(ctx):
     response = '<:suffer:885330089523437638>'
     await ctx.send(response)
-
-@bot.command(name='deleteF')
-async def deleteF(ctx):
-    response = 'Deleting'
-    await ctx.send(response)
-    Remove("TempDownloads/")
 #endregion
 
 
@@ -62,16 +55,20 @@ async def queue(ctx):
 
 @bot.command(name='play', help='Plays a song with a predownload from YouTube')
 async def play(ctx,url):
+    print("A")
     server = ctx.message.guild
     global voice_channel
     voice_channel = server.voice_client
 
     async with ctx.typing():
+        print("B")
         player = await YTDLSource.from_url(url, loop=bot.loop)
         q.put(player)
         if(q.qsize() == 1 and not(voice_channel.is_playing())):
             voice_channel.play(source=q.get(), after=lambda x: Check_Queue())
+            print("C")
     await ctx.send('**Added Audio:** {}'.format(player.title))
+    print("D")
 
 @bot.command(name='stream', help='Streams a song directly from YouTube')
 async def stream(ctx, *, url):
@@ -112,7 +109,6 @@ async def stop(ctx):
 
 @bot.command(name='join', help='Tells the bot to join the voice channel')
 async def join(ctx):
-    Remove("TempDownloads/")
     if not ctx.message.author.voice:
         await ctx.send("{} is not connected to a voice channel".format(ctx.message.author.name))
         return
@@ -130,8 +126,6 @@ async def leave(ctx):
     await voice_client.disconnect()
     await asyncio.sleep(1000)
     
-    Remove("TempDownloads/")
-
 @play.before_invoke
 @stream.before_invoke
 async def ensure_voice(ctx):
@@ -162,6 +156,10 @@ def Remove(path):
 def Check_Queue():
     if(q.qsize() > 0):
         voice_channel.play(source=q.get(), after=lambda x: Check_Queue())        
+
+def exit_handler():
+    Remove("TempDownloads/")
+
 #endregion
 
 
@@ -172,10 +170,6 @@ ytdl_format_options = {
     'format': 'bestaudio/best',
     'continue_dl': True,
     'outtmpl': 'TempDownloads/%(extractor)s-%(id)s-%(title)s.%(ext)s',
-    'postprocessors': [{
-        'key': 'FFmpegExtractAudio',
-        'preferredcodec': 'mp3',
-        'preferredquality': '192', }],
     'restrictfilenames': False,
     'noplaylist': True,
     'nocheckcertificate': True,
@@ -206,12 +200,12 @@ class YTDLSource(discord.PCMVolumeTransformer):
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
         if 'entries' in data:
             data = data['entries'][0]
-        if path.exists(data['title']) or path.exists(data['title'] + '.mp3'):
+        if path.exists(data['title']):
             filename = data['title']
         else:
             filename = ytdl.prepare_filename(data)
-        return cls(discord.FFmpegPCMAudio(filename.split('.')[0] + ".mp3"), data=data)
+        return cls(discord.FFmpegPCMAudio(filename), data=data)
 #endregion
 
-
 bot.run(TOKEN)
+atexit.register(exit_handler)
