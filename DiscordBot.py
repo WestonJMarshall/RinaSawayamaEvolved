@@ -22,7 +22,7 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 intents = discord.Intents().all()
 client = discord.Client(intents=intents)
 
-bot = commands.Bot(command_prefix='!',intents=intents)
+bot = commands.Bot(command_prefix='!', intents=intents)
 
 q = Queue(maxsize = 32)
 voice_channel = None
@@ -53,25 +53,21 @@ async def queue(ctx):
         s += '[' + str(i) + ']' + ' ' + qi.title + '\n'
     await ctx.send(s)
 
-@bot.command(name='play', help='Plays a song with a predownload from YouTube')
-async def play(ctx,url):
-    print("A")
+@bot.command(name='download', help='Plays a song with a predownload from YouTube')
+async def download(ctx,url):
     server = ctx.message.guild
     global voice_channel
     voice_channel = server.voice_client
 
     async with ctx.typing():
-        print("B")
         player = await YTDLSource.from_url(url, loop=bot.loop)
         q.put(player)
         if(q.qsize() == 1 and not(voice_channel.is_playing())):
             voice_channel.play(source=q.get(), after=lambda x: Check_Queue())
-            print("C")
     await ctx.send('**Added Audio:** {}'.format(player.title))
-    print("D")
 
-@bot.command(name='stream', help='Streams a song directly from YouTube')
-async def stream(ctx, *, url):
+@bot.command(name='play', help='Streams a song directly from YouTube')
+async def play(ctx, *, url):
     server = ctx.message.guild
     global voice_channel
     voice_channel = server.voice_client
@@ -127,7 +123,7 @@ async def leave(ctx):
     await asyncio.sleep(1000)
     
 @play.before_invoke
-@stream.before_invoke
+@download.before_invoke
 async def ensure_voice(ctx):
     if (ctx.voice_client is None) or (ctx.voice_client.channel is not ctx.author.voice.channel):
         if ctx.author.voice:
@@ -192,7 +188,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         super().__init__(source, volume)
         self.data = data
         self.title = data.get('title')
-        self.url = ""
+        self.url = data.get('url')
 
     @classmethod
     async def from_url(cls, url, *, loop=None, stream=False):
@@ -200,10 +196,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
         if 'entries' in data:
             data = data['entries'][0]
-        if path.exists(data['title']):
-            filename = data['title']
-        else:
-            filename = ytdl.prepare_filename(data)
+        
+        filename = data['url'] if stream else ytdl.prepare_filename(data)
         return cls(discord.FFmpegPCMAudio(filename), data=data)
 #endregion
 
