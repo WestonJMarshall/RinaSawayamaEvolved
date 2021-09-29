@@ -25,6 +25,25 @@ async def cringe(ctx):
     response = '<:suffer:885330089523437638>'
     await ctx.send(response)
 
+@bot.command(name='spongebob')
+async def spongebob(ctx, *, text):
+    response = ""
+    isLower = not text[0].islower()
+    for c in text:
+        num = random.random()
+        if num >= 0.9:                          #10% chance to have two lower/upper characters in a row
+            if isLower:
+                response += c.lower()
+            else:
+                response += c.upper()
+        elif isLower:                           #if the last char was lower, it swaps to upper
+            response += c.upper()
+            isLower = False
+        else:                                   #if the last char was upper, it swaps to lower
+            response += c.lower()
+            isLower = True
+    await ctx.send(response)
+
 @bot.command(name='nani') #THIS CODE IS REALLY WRONG BUT ITS FUNNY
 async def nani(ctx):
     api_url = "https://ranmoji.herokuapp.com/emojis/api/v.1.0/"
