@@ -59,27 +59,43 @@ async def nani(ctx):
 
 @bot.command(name='current-emotion')
 async def emotion(ctx):
+    """
+    Overview: Take an html hex code for an emoji from an api endpoint,
+    convert it to utf-16, and then send it to be displayed as an emote in Discord
+    
+    The endpoint that is currently being used is https://ranmoji.herokuapp.com/emojis/api/v.1.0/
+    This endpoint returns an emoji in a way that an HTML web page would read and then render them.
+    Every emoji has a codepoint. A codepoint is just the utf-8 code for a character within the utf-8 character set
+    However, if we want to take an emoji's data and then have it be rendered, we need to know what
+    data format our destination uses to render emojis. HTML uses 'HTML hex' written in this format &#xnnnnn;. (n = number or letter, the n's will be the codepoint)
+    For Discord, we need to add a utf-8 character to a utf-8 string. That character is derived from the base 10 version
+    of the hexidecimal code point because there is no easy hexidecimal data type here in Python. So we
+    convert our base 16 hex code into a base 10 decimal code and then the chr() command converts that into a 
+    single utf-8 character for us instead of it being like a 6 digit integer. 
+
+    ALSO we access our API endpoint using a GET request, and we use the requests library to help with that.
+    GET returns JSON data which we parse for the 'emoji' field, whose value is the HTML hex data.
+    Finally we need to strip off the HTML stuff on what we get, so we take off the &,#, and ;, and add a 0 to the front, 
+    and then we have the hexidecimal code we can convert
+    """
     api_url = "https://ranmoji.herokuapp.com/emojis/api/v.1.0/"
     response = requests.get(api_url)
 
     emojiHTMLEntity = json.loads(response.text)['emoji']
     emojiHTMLEntityHex = '0' + emojiHTMLEntity[2:len(emojiHTMLEntity) - 1].lower()
 
-    emoji = "I FUCKED UP"
+    emoji = ""
     try:
         emoji = chr(int(emojiHTMLEntityHex,16))
     except:
-        try:
-            emoji = chr(int(emojiHTMLEntityHex,16))
-        except:
-            emoji = chr(int(emojiHTMLEntityHex,16))
+        emoji = "Whoops I'm an idiot!"
 
     await ctx.send(emoji)
 
 @bot.command(name='random-character')
 async def randomChar(ctx):
+    #Generates a random 4 digit hex code that will map to some symbol in the utf-8 character set
     numCharMap = {1 : 'A', 2 : 'B', 3 : 'C', 4 : 'D', 5 : 'E', 6 : 'F'}
-
     charVals = ["0","0","0","0"]
 
     for c in charVals:
@@ -99,9 +115,9 @@ async def randomChar(ctx):
 #region Music Commands
 @bot.command(name='skip')
 async def skip(ctx):
-    await stop(ctx)
+    await pause(ctx)
     await asyncio.sleep(1)
-    Check_Queue()
+    check_queue("Skipped")
 
 @bot.command(name='queue')
 async def queue(ctx):
@@ -120,10 +136,11 @@ async def download(ctx,url):
 
     async with ctx.typing():
         player = await YTDLSource.from_url(url, loop=bot.loop)
-        q.put(player)
-        if(q.qsize() == 1 and not(voice_channel.is_playing())):
-            voice_channel.play(source=q.get(), after=lambda x: Check_Queue())
-    await ctx.send('**Added Audio:** {}'.format(player.title))
+        if not player == None:
+            q.put(player)
+            if(q.qsize() == 1 and not(voice_channel.is_playing())):
+                voice_channel.play(source=q.get(), after=lambda x: check_queue(x))
+            await ctx.send('**Added Audio:** {}'.format(player.title))
 
 @bot.command(name='play', help='Streams a song directly from YouTube')
 async def play(ctx, *, url):
@@ -132,17 +149,18 @@ async def play(ctx, *, url):
     voice_channel = server.voice_client
 
     async with ctx.typing():
-        player = await YTDLSource.from_url(url, loop=bot.loop, stream=True)
-        q.put(player)
-        if(q.qsize() == 1 and not(voice_channel.is_playing())):
-            voice_channel.play(source=q.get(), after=lambda x: Check_Queue())
-        await ctx.send('**Added Audio:** {}'.format(player.title))
+        player = await YTDLSource.from_url(ctx, url, loop=bot.loop, stream=True)
+        if not player == None:
+            q.put(player)
+            if(q.qsize() == 1 and not(voice_channel.is_playing())):
+                voice_channel.play(source=q.get(), after=lambda x: check_queue(x))
+            await ctx.send('**Added Audio:** {}'.format(player.title))
 
 @bot.command(name='pause', help='This command pauses the song')
 async def pause(ctx):
     voice_client = ctx.message.guild.voice_client
     if voice_client.is_playing():
-        await voice_client.pause()
+        voice_client.pause()
     else:
         await ctx.send("The bot is not playing anything at the moment.")
     
@@ -196,9 +214,10 @@ async def ensure_voice(ctx):
 
 
 #region Helper Functions
-def Check_Queue():
+def check_queue(x):
+    print(x)
     if(q.qsize() > 0):
-        voice_channel.play(source=q.get(), after=lambda x: Check_Queue())    
+        voice_channel.play(source=q.get(), after=lambda x: check_queue(x))    
 #endregion
 
 
@@ -207,17 +226,11 @@ youtube_dl.utils.bug_reports_message = lambda: ''
 
 ytdl_format_options = {
     'format': 'bestaudio/best',
-    'continue_dl': True,
     'outtmpl': 'TempDownloads/%(extractor)s-%(id)s-%(title)s.%(ext)s',
-    'restrictfilenames': False,
-    'noplaylist': True,
-    'nocheckcertificate': True,
-    'ignoreerrors': False,
-    'logtostderr': False,
     'quiet': True,
     'no_warnings': True,
-    'default_search': 'auto',
-    'source_address': '0.0.0.0' # bind to ipv4 since ipv6 addresses cause issues sometimes
+    'source_address': '0.0.0.0',
+    'cachedir': False
 }
 
 ffmpeg_options = {
@@ -234,14 +247,24 @@ class YTDLSource(discord.PCMVolumeTransformer):
         self.url = data.get('url')
 
     @classmethod
-    async def from_url(cls, url, *, loop=None, stream=False):
+    async def from_url(cls, ctx, url, *, loop=None, stream=False):
+        #youtube-dl --rm-cache-dir
         loop = loop or asyncio.get_event_loop()
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
         if 'entries' in data:
-            data = data['entries'][0]
-        
-        filename = data['url'] if stream else ytdl.prepare_filename(data)
-        return cls(discord.FFmpegPCMAudio(filename), data=data)
+            data = data['entries'] #THIS IS FOR PLAYLISTS, JUST LOOPS THE PLAY FUNCTION
+            if len(data) < 20:
+                for d in data:
+                    await play(ctx,url=d['url'])
+            else:
+                await ctx.send("Cannot load a playlist with more than 20 songs")
+        else:
+            filename = data['url'] if stream else ytdl.prepare_filename(data)
+            ret = cls(discord.FFmpegPCMAudio(filename), data=data)
+            if ret.title == 'videoplayback':
+                await asyncio.sleep(0.5) # FOR NAMING PLAYLIST SONGS
+                ret.title = 'Playlist Song #' + str(q.qsize())
+            return ret
 #endregion
 
 bot.run(TOKEN)
