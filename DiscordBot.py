@@ -100,8 +100,8 @@ async def randomChar(ctx):
 @bot.command(name='skip')
 async def skip(ctx):
     await stop(ctx)
-    await asyncio.sleep(1000)
-    HelperFunctions.Check_Queue()
+    await asyncio.sleep(1)
+    Check_Queue()
 
 @bot.command(name='queue')
 async def queue(ctx):
@@ -122,7 +122,7 @@ async def download(ctx,url):
         player = await YTDLSource.from_url(url, loop=bot.loop)
         q.put(player)
         if(q.qsize() == 1 and not(voice_channel.is_playing())):
-            voice_channel.play(source=q.get(), after=lambda x: HelperFunctions.Check_Queue())
+            voice_channel.play(source=q.get(), after=lambda x: Check_Queue())
     await ctx.send('**Added Audio:** {}'.format(player.title))
 
 @bot.command(name='play', help='Streams a song directly from YouTube')
@@ -135,7 +135,7 @@ async def play(ctx, *, url):
         player = await YTDLSource.from_url(url, loop=bot.loop, stream=True)
         q.put(player)
         if(q.qsize() == 1 and not(voice_channel.is_playing())):
-            voice_channel.play(source=q.get(), after=lambda x: HelperFunctions.Check_Queue())
+            voice_channel.play(source=q.get(), after=lambda x: Check_Queue())
         await ctx.send('**Added Audio:** {}'.format(player.title))
 
 @bot.command(name='pause', help='This command pauses the song')
@@ -179,7 +179,7 @@ async def leave(ctx):
         voice_client.stop()
 
     await voice_client.disconnect()
-    await asyncio.sleep(1000)
+    await asyncio.sleep(1)
     
 @play.before_invoke
 @download.before_invoke
@@ -196,9 +196,9 @@ async def ensure_voice(ctx):
 
 
 #region Helper Functions
-    def Check_Queue():
-        if(q.qsize() > 0):
-            voice_channel.play(source=q.get(), after=lambda x: Check_Queue())    
+def Check_Queue():
+    if(q.qsize() > 0):
+        voice_channel.play(source=q.get(), after=lambda x: Check_Queue())    
 #endregion
 
 
