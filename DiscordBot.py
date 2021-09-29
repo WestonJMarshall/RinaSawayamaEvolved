@@ -1,23 +1,13 @@
 # DiscordBot.py
 
 #region Imports
-from pathlib import Path
-import atexit
-import os
-import discord
-from discord.ext import commands
-from dotenv import load_dotenv
-import os.path
-from os import path
-import youtube_dl
-import asyncio
-from queue import Queue
+from RinasAssistant import *
 #endregion
-
 
 #region Startup & Globals
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
+atexit.register(HelperFunctions.exit_handler)
 
 intents = discord.Intents().all()
 client = discord.Client(intents=intents)
@@ -34,6 +24,56 @@ voice_channel = None
 async def cringe(ctx):
     response = '<:suffer:885330089523437638>'
     await ctx.send(response)
+
+@bot.command(name='nani') #THIS CODE IS REALLY WRONG BUT ITS FUNNY
+async def nani(ctx):
+    api_url = "https://ranmoji.herokuapp.com/emojis/api/v.1.0/"
+    response = requests.get(api_url)
+
+    emojiHTMLEntity = json.loads(response.text)['emoji']
+
+    emojiHTMLEntityHex = emojiHTMLEntity[3:len(emojiHTMLEntity) - 1].lower() + "0"
+    emojiBytes = codecs.decode(emojiHTMLEntityHex, "hex")
+    emojiUTF16 = emojiBytes.decode("utf-16", "ignore")
+
+    await ctx.send(emojiUTF16)
+
+@bot.command(name='current-emotion')
+async def emotion(ctx):
+    api_url = "https://ranmoji.herokuapp.com/emojis/api/v.1.0/"
+    response = requests.get(api_url)
+
+    emojiHTMLEntity = json.loads(response.text)['emoji']
+    emojiHTMLEntityHex = '0' + emojiHTMLEntity[2:len(emojiHTMLEntity) - 1].lower()
+
+    emoji = "I FUCKED UP"
+    try:
+        emoji = chr(int(emojiHTMLEntityHex,16))
+    except:
+        try:
+            emoji = chr(int(emojiHTMLEntityHex,16))
+        except:
+            emoji = chr(int(emojiHTMLEntityHex,16))
+
+    await ctx.send(emoji)
+
+@bot.command(name='random-character')
+async def randomChar(ctx):
+    numCharMap = {1 : 'A', 2 : 'B', 3 : 'C', 4 : 'D', 5 : 'E', 6 : 'F'}
+
+    charVals = ["0","0","0","0"]
+
+    for c in charVals:
+        if(random.randint(0,1) == 1):
+            c = str(random.randint(0,9))
+        else:
+            c = numCharMap[random.randint(1,6)]
+    
+    emojiHTMLEntityHex = "0x" + charVals[0] + charVals[1] + charVals[2] + charVals[3]
+    emoji = chr(int(emojiHTMLEntityHex,16))
+
+    await ctx.send(emoji)
+
 #endregion
 
 
@@ -42,7 +82,7 @@ async def cringe(ctx):
 async def skip(ctx):
     await stop(ctx)
     await asyncio.sleep(1000)
-    Check_Queue()
+    HelperFunctions.Check_Queue()
 
 @bot.command(name='queue')
 async def queue(ctx):
@@ -63,7 +103,7 @@ async def download(ctx,url):
         player = await YTDLSource.from_url(url, loop=bot.loop)
         q.put(player)
         if(q.qsize() == 1 and not(voice_channel.is_playing())):
-            voice_channel.play(source=q.get(), after=lambda x: Check_Queue())
+            voice_channel.play(source=q.get(), after=lambda x: HelperFunctions.Check_Queue())
     await ctx.send('**Added Audio:** {}'.format(player.title))
 
 @bot.command(name='play', help='Streams a song directly from YouTube')
@@ -76,7 +116,7 @@ async def play(ctx, *, url):
         player = await YTDLSource.from_url(url, loop=bot.loop, stream=True)
         q.put(player)
         if(q.qsize() == 1 and not(voice_channel.is_playing())):
-            voice_channel.play(source=q.get(), after=lambda x: Check_Queue())
+            voice_channel.play(source=q.get(), after=lambda x: HelperFunctions.Check_Queue())
         await ctx.send('**Added Audio:** {}'.format(player.title))
 
 @bot.command(name='pause', help='This command pauses the song')
@@ -137,25 +177,9 @@ async def ensure_voice(ctx):
 
 
 #region Helper Functions
-def Remove(path):
-    #Check if folder path exists, create one if it doesn't
-    root = Path().absolute()
-    full = root.joinpath(path)
-    if not(os.path.exists(full) and os.path.isdir(full)):
-        os.makedirs(full)
-    #Delete all files in the path
-    files = os.listdir(full)
-    for file in files:
-        fileFull = full.joinpath(file)
-        os.remove(fileFull)
-
-def Check_Queue():
-    if(q.qsize() > 0):
-        voice_channel.play(source=q.get(), after=lambda x: Check_Queue())        
-
-def exit_handler():
-    Remove("TempDownloads/")
-
+    def Check_Queue():
+        if(q.qsize() > 0):
+            voice_channel.play(source=q.get(), after=lambda x: Check_Queue())    
 #endregion
 
 
@@ -202,4 +226,4 @@ class YTDLSource(discord.PCMVolumeTransformer):
 #endregion
 
 bot.run(TOKEN)
-atexit.register(exit_handler)
+
