@@ -1,2 +1,2 @@
-python DiscordBot.py %*
+py DiscordBot.py %*
 pause

@@ -57,6 +57,12 @@ async def nani(ctx):
 
     await ctx.send(emojiUTF16)
 
+@bot.command(name='random-word') #THIS CODE IS REALLY WRONG BUT ITS FUNNY
+async def randomWord(ctx):
+    RiTa = RiTaAccess()
+    word = RiTa.randomWord()
+    await ctx.send(word)
+
 @bot.command(name='current-emotion')
 async def emotion(ctx):
     """
@@ -267,5 +273,56 @@ class YTDLSource(discord.PCMVolumeTransformer):
             return ret
 #endregion
 
+
 bot.run(TOKEN)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#TEXT TO SPEAK CODE THAT DOESN'T WORK
+@bot.command(name='set-speaker')
+async def set_speaker(ctx, *, text):
+    global vocodesVoice, vocodesVoices
+    vocodesVoice = vocodesVoices[text[0]]
+
+@bot.command(name='speak') 
+async def speak(ctx, *, text):
+    global vocodesVoice
+    fileName = await speak_request(text, vocodesVoice,
+    {
+        'url': 'https://mumble.stream/speak',
+        'headers':
+        {'Accept': 'application/json',
+        'Content-Type': 'application/json'
+        },
+        'body': 
+        {
+            'speaker': vocodesVoice,
+            'text': text
+        }
+    })
+
+    server = ctx.message.guild
+    global voice_channel
+    voice_channel = server.voice_client
+    voice_channel.play(discord.FFmpegPCMAudio(fileName))
+
+async def speak_request(message, utterance, paramsEE) :
+    print("Playing " + utterance + "!")
+    #Generate random temporary filename to avoid overwriting other speech recordings
+    fileName = str(random.randint(10000000,99999999)) + ".wav"
+    r = requests.get('https://mumble.stream/speak', json=paramsEE)
+    r.json
+    return fileName
 
