@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 import os.path
 import js2py #JavaScript -> Python converter
 import youtube_dl
+import pyxivapi
+from pyxivapi.models import Filter, Sort
 import requests
 import json
 import codecs

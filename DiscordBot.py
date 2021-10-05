@@ -11,6 +11,7 @@ atexit.register(HelperFunctions.exit_handler)
 
 intents = discord.Intents().all()
 client = discord.Client(intents=intents)
+ffxivClient = pyxivapi.XIVAPIClient(api_key="baa9efb43d5940228cff609d8430cb7226461d8d92cf4a3dab95f3f7376f29ef")
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 
@@ -43,6 +44,33 @@ async def spongebob(ctx, *, text):
             response += c.lower()
             isLower = True
     await ctx.send(response)
+
+@bot.command(name='ffxiv-lore')
+async def ffxivLore(ctx, *, text):
+    global ffxivClient
+    lore = await ffxivClient.lore_search(
+    query=text,
+    language="en"
+    )
+    if len(lore['Results']) > 0:
+        await ctx.send(str(lore['Results'][random.randint(0,len(lore['Results']))]['Text'])[0:3200])
+    else:
+        await ctx.send("No results")
+
+@bot.command(name='ffxiv-character')
+async def ffxivCharacter(ctx, *, text):
+    global ffxivClient
+    character = await ffxivClient.character_search(
+    world="sargatanas",
+    forename=text.split()[0], 
+    surname=text.split()[1]
+    )
+    if len(character['Results']) > 0:
+        await ctx.send(character['Results'][0]['Avatar'])
+    else:
+        await ctx.send("No results")
+
+    
 
 @bot.command(name='nani') #THIS CODE IS REALLY WRONG BUT ITS FUNNY
 async def nani(ctx):
