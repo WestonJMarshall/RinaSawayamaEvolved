@@ -1,6 +1,7 @@
 # DiscordBot.py
 
 #region Imports
+from requests.api import head
 from RinasAssistant import *
 #endregion
 
@@ -13,7 +14,7 @@ intents = discord.Intents().all()
 client = discord.Client(intents=intents)
 ffxivClient = pyxivapi.XIVAPIClient(api_key="baa9efb43d5940228cff609d8430cb7226461d8d92cf4a3dab95f3f7376f29ef")
 
-bot = commands.Bot(command_prefix='!', intents=intents)
+bot = commands.Bot(command_prefix=['!','Rina-'], intents=intents)
 
 q = Queue(maxsize = 32)
 voice_channel = None
@@ -70,7 +71,32 @@ async def ffxivCharacter(ctx, *, text):
     else:
         await ctx.send("No results")
 
-    
+@bot.command(name='slots')
+async def slot(ctx): 
+    await ctx.message.delete()
+    emojis = "🍎🍊🍐🍋🍉🍇🍓🍒"
+    a = random.choice(emojis)
+    b = random.choice(emojis)
+    c = random.choice(emojis)
+    slotmachine = f"**[ {a} {b} {c} ]\n{ctx.author.name}**,"
+    if (a == b == c):
+        await ctx.send(embed=discord.Embed.from_dict({"title":"Slot machine", "description":f"{slotmachine} All matchings, you won!"}))
+    elif (a == b) or (a == c) or (b == c):
+        await ctx.send(embed=discord.Embed.from_dict({"title":"Slot machine", "description":f"{slotmachine} 2 in a row, you won!"}))
+    else:
+        await ctx.send(embed=discord.Embed.from_dict({"title":"Slot machine", "description":f"{slotmachine} No match, you lost"}))
+
+@bot.command(name='joke')
+async def joke(ctx):  
+    headers = {
+        "Accept": "application/json"
+    }
+
+    api_url = "https://icanhazdadjoke.com"
+    r = requests.get(api_url, headers=headers)
+    joke = json.loads(r.text)['joke']
+
+    await ctx.send(joke)
 
 @bot.command(name='nani') #THIS CODE IS REALLY WRONG BUT ITS FUNNY
 async def nani(ctx):
@@ -143,8 +169,34 @@ async def randomChar(ctx):
 
     await ctx.send(emoji)
 
+@bot.command(name='first-message')
+async def first_message(ctx, channel: discord.TextChannel = None): 
+    await ctx.message.delete()  
+    if channel is None:
+        channel = ctx.channel
+    first_message = (await channel.history(limit=1, oldest_first=True).flatten())[0]
+    embed = discord.Embed(description=first_message.content)
+    embed.add_field(name="First Message", value=f"[Jump]({first_message.jump_url})")
+    await ctx.send(embed=embed)
+
 #endregion
 
+@bot.command(name='tts')
+async def tts(ctx, *, message):
+    buff = do_tts(message)
+    a_file=discord.File(buff, f"{message}.wav")
+
+    byt = buff.getvalue()
+    player = FFmpegPCMAudio(byt, pipe=True)
+
+    server = ctx.message.guild
+    global voice_channel
+    voice_channel = server.voice_client
+
+    if not player == None:
+        q.put(player)
+        if(q.qsize() == 1 and not(voice_channel.is_playing())):
+            voice_channel.play(source=q.get(), after=lambda x: check_queue(x))
 
 #region Music Commands
 @bot.command(name='skip')
@@ -234,6 +286,7 @@ async def leave(ctx):
     await asyncio.sleep(1)
     
 @play.before_invoke
+@tts.before_invoke
 @download.before_invoke
 async def ensure_voice(ctx):
     if (ctx.voice_client is None) or (ctx.voice_client.channel is not ctx.author.voice.channel):
@@ -300,6 +353,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
                 ret.title = 'Playlist Song #' + str(q.qsize())
             return ret
 #endregion
+
 
 
 bot.run(TOKEN)
