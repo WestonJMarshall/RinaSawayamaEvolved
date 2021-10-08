@@ -108,6 +108,22 @@ async def joke(ctx):
 
     await ctx.send(joke)
 
+@bot.command(name='role')
+async def role(ctx, *, text):
+
+    if str(text).__contains__('d'):
+        r = text.split('d')
+        x = 0
+        full = ""
+        while x < int(r[0]):
+            x += 1
+            full += str(random.randint(1,int(r[1]))) + ', '
+        embeded = discord.Embed(description='')
+        embeded.add_field(name="Roles:", value=full[0:len(full) - 2])
+        await ctx.send(embed=embeded)
+    else:
+        await ctx.send("Wrong format baka")
+
 @bot.command(name='nani') #THIS CODE IS REALLY WRONG BUT ITS FUNNY
 async def nani(ctx):
     api_url = "https://ranmoji.herokuapp.com/emojis/api/v.1.0/"
