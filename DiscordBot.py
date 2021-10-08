@@ -1,7 +1,6 @@
 # DiscordBot.py
 
 #region Imports
-from requests.api import head
 from RinasAssistant import *
 #endregion
 
@@ -19,6 +18,26 @@ bot = commands.Bot(command_prefix=['!','Rina-'], intents=intents)
 q = Queue(maxsize = 32)
 voice_channel = None
 voiceCode = 'en'
+#endregion
+
+
+#region General Messages
+@bot.event
+async def on_message(message):
+    if message.author == bot.user:
+        return
+    if message.author.id == 178976168622424065:
+        await message.add_reaction('<:suffer:885330089523437638>')
+
+    await bot.process_commands(message)
+
+# 178976168622424065 Jacob, Jack 181866295891984384, Olive 199626966717038592, Weston 210798139320434690, Abbi 331608394203136003
+@bot.event
+async def on_typing(channel, user, when):
+    if user.id == 178976168622424065:
+        message = await channel.send('I see you typing, Jacob 👀')
+        await asyncio.sleep(1.00)
+        await message.delete()
 #endregion
 
 
@@ -83,7 +102,6 @@ async def ffxivCharacter(ctx, *, text):
 
 @bot.command(name='slots')
 async def slot(ctx): 
-    await ctx.message.delete()
     emojis = "🍎🍊🍐🍋🍉🍇🍓🍒"
     a = random.choice(emojis)
     b = random.choice(emojis)
@@ -348,28 +366,44 @@ async def ensure_voice(ctx):
 
 #region Helper Functions
 def check_queue(x):
+    print(x)
     if(q.qsize() > 0):
         voice_channel.play(source=q.get(), after=lambda x: check_queue(x))    
 #endregion
 
 
 #region Youtube-DL Functionality
-youtube_dl.utils.bug_reports_message = lambda: ''
+yt_dlp.utils.bug_reports_message = lambda: ''
 
 ytdl_format_options = {
     'format': 'bestaudio/best',
     'outtmpl': 'TempDownloads/%(extractor)s-%(id)s-%(title)s.%(ext)s',
+    'cachedir': False,
+    'nocheckcertificate': True,
+    'external_downloader': 'native',
+    'keepvideo': False,
+    'simulate': True,
+    'geo_bypass': True,
     'quiet': True,
     'no_warnings': True,
+    'ingnoreerrors': True,
     'source_address': '0.0.0.0',
-    'cachedir': False
+    'default_search': 'auto',
+    'noplaylist': True,
+    'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'm4a',
+            'preferredquality': '96k',
+    }],
 }
 
 ffmpeg_options = {
     'options': '-vn'
 }
 
-ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
+ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
+MAX_PLAYLIST_SIZE = 20
+nameQ = Queue(maxsize = MAX_PLAYLIST_SIZE)
 
 class YTDLSource(discord.PCMVolumeTransformer):
     def __init__(self, source, *, data, volume=0.5):
@@ -382,11 +416,12 @@ class YTDLSource(discord.PCMVolumeTransformer):
     async def from_url(cls, ctx, url, *, loop=None, stream=False):
         #youtube-dl --rm-cache-dir
         loop = loop or asyncio.get_event_loop()
-        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
+        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download = not stream))
         if 'entries' in data:
             data = data['entries'] #THIS IS FOR PLAYLISTS, JUST LOOPS THE PLAY FUNCTION
-            if len(data) < 20:
+            if len(data) < MAX_PLAYLIST_SIZE:
                 for d in data:
+                    nameQ.put(d['title'])
                     await play(ctx,url=d['url'])
             else:
                 await ctx.send("Cannot load a playlist with more than 20 songs")
@@ -394,62 +429,46 @@ class YTDLSource(discord.PCMVolumeTransformer):
             filename = data['url'] if stream else ytdl.prepare_filename(data)
             ret = cls(discord.FFmpegPCMAudio(filename), data=data)
             if ret.title == 'videoplayback':
-                await asyncio.sleep(0.5) # FOR NAMING PLAYLIST SONGS
-                ret.title = 'Playlist Song #' + str(q.qsize())
+                await asyncio.sleep(0.1) # FOR NAMING PLAYLIST SONGS
+                ret.title = nameQ.get()
             return ret
 #endregion
 
-
+@bot.command(name="commands", description="Returns all commands available")
+async def commands(ctx):
+    helptext = "```"
+    strList = []
+    for command in bot.commands:
+        strList.append(command.qualified_name)
+    helptext += 'COMMANDS:\n\n'
+    for command in sorted(strList):
+        helptext += f"{command}\n"
+    helptext+="```"
+    await ctx.send(helptext)
 
 bot.run(TOKEN)
 
 
+#Legacy Code V V V
 
+@bot.command(name='member-ids')
+async def member_ids(ctx):
+    await ctx.message.delete()  
+    channel = client.get_channel(846302309712789504) #gets the channel you want to get the list from
 
+    members = channel.members #finds members connected to the channel
 
+    memids = [] #(list)
+    for member in members:
+        memids.append(member.id)
 
+    print(memids) #print info
 
+@bot.command('get-channel')
+async def get_channel(ctx, *, given_name=None):
+    await ctx.message.delete()  
+    for channel in ctx.guild.channels:
+        if channel.name == given_name:
+            wanted_channel_id = channel.id
 
-
-
-
-
-
-
-
-#TEXT TO SPEAK CODE THAT DOESN'T WORK
-@bot.command(name='set-speaker')
-async def set_speaker(ctx, *, text):
-    global vocodesVoice, vocodesVoices
-    vocodesVoice = vocodesVoices[text[0]]
-
-@bot.command(name='speak') 
-async def speak(ctx, *, text):
-    global vocodesVoice
-    fileName = await speak_request(text, vocodesVoice,
-    {
-        'url': 'https://mumble.stream/speak',
-        'headers':
-        {'Accept': 'application/json',
-        'Content-Type': 'application/json'
-        },
-        'body': 
-        {
-            'speaker': vocodesVoice,
-            'text': text
-        }
-    })
-
-    server = ctx.message.guild
-    global voice_channel
-    voice_channel = server.voice_client
-    voice_channel.play(discord.FFmpegPCMAudio(fileName))
-
-async def speak_request(message, utterance, paramsEE) :
-    print("Playing " + utterance + "!")
-    #Generate random temporary filename to avoid overwriting other speech recordings
-    fileName = str(random.randint(10000000,99999999)) + ".wav"
-    r = requests.get('https://mumble.stream/speak', json=paramsEE)
-    r.json
-    return fileName
-
+    print(wanted_channel_id) # this is just to check 
