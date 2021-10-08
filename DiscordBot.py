@@ -18,10 +18,20 @@ bot = commands.Bot(command_prefix=['!','Rina-'], intents=intents)
 
 q = Queue(maxsize = 32)
 voice_channel = None
+voiceCode = 'en'
 #endregion
 
 
 #region Response Commands
+#https://gtts.readthedocs.io/en/latest/module.html#languages-gtts-lang
+def do_tts(message):
+	f = io.BytesIO()
+	global voiceCode
+	tts = gTTS(text=message.lower(), lang=voiceCode)
+	tts.write_to_fp(f)
+	f.seek(0)
+	return f
+
 @bot.command(name='cringe')
 async def cringe(ctx):
     response = '<:suffer:885330089523437638>'
@@ -193,10 +203,30 @@ async def tts(ctx, *, message):
     global voice_channel
     voice_channel = server.voice_client
 
+    global voiceCode
+    await ctx.send('(Voice: ' + voiceCode +') ' + message)
+
     if not player == None:
         q.put(player)
         if(q.qsize() == 1 and not(voice_channel.is_playing())):
             voice_channel.play(source=q.get(), after=lambda x: check_queue(x))
+
+@bot.command(name='set-voice')
+async def set_voice(ctx, *, message):
+    global voiceCode
+    voiceCode = message
+    if gtts.tts.tts_langs().__contains__(message):
+        await ctx.send('Voice set to: ' + gtts.tts.tts_langs()[message])
+    else:
+        await ctx.send('No voice with that code')
+
+@bot.command(name='get-voices')
+async def get_voices(ctx):
+    allVoices = ''
+    for x in gtts.tts.tts_langs():
+        allVoices += x + ' - ' + gtts.tts.tts_langs()[x] + '\n'
+    embeded = discord.Embed(description=allVoices)
+    await ctx.send(embed=embeded)
 
 #region Music Commands
 @bot.command(name='skip')
@@ -302,7 +332,6 @@ async def ensure_voice(ctx):
 
 #region Helper Functions
 def check_queue(x):
-    print(x)
     if(q.qsize() > 0):
         voice_channel.play(source=q.get(), after=lambda x: check_queue(x))    
 #endregion

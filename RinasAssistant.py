@@ -9,6 +9,7 @@ from discord.ext import commands
 from discord.opus import Encoder
 from dotenv import load_dotenv
 import os.path
+import gtts
 import js2py #JavaScript -> Python converter
 import youtube_dl
 import pyxivapi
@@ -21,7 +22,9 @@ import re
 import random
 import asyncio
 from gtts import gTTS
+import gtts
 from queue import Queue
+
 
 class HelperFunctions:
     @staticmethod
@@ -40,13 +43,6 @@ class HelperFunctions:
     @staticmethod
     def exit_handler():
         HelperFunctions.remove_downloads("TempDownloads/")
-
-def do_tts(message):
-	f = io.BytesIO()
-	tts = gTTS(text=message.lower(), lang='fr', tld='fr')
-	tts.write_to_fp(f)
-	f.seek(0)
-	return f
 		
 class FFmpegPCMAudio(discord.AudioSource):
     def __init__(self, source, *, executable='ffmpeg', pipe=False, stderr=None, before_options=None, options=None):
