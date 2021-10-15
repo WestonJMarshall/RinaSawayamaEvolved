@@ -22,22 +22,22 @@ voiceCode = 'en'
 
 
 #region General Messages
-@bot.event
-async def on_message(message):
-    if message.author == bot.user:
-        return
-    if message.author.id == 178976168622424065:
-        await message.add_reaction('<:suffer:885330089523437638>')
-
-    await bot.process_commands(message)
+#@bot.event
+#async def on_message(message):
+#    if message.author == bot.user:
+#        return
+#    if message.author.id == 178976168622424065:
+#        await message.add_reaction('<:emoji_for_bri_ish_meatballs:882041429906571264>')
+#
+#    await bot.process_commands(message)
 
 # 178976168622424065 Jacob, Jack 181866295891984384, Olive 199626966717038592, Weston 210798139320434690, Abbi 331608394203136003
-@bot.event
-async def on_typing(channel, user, when):
-    if user.id == 178976168622424065:
-        message = await channel.send('I see you typing, Jacob 👀')
-        await asyncio.sleep(1.00)
-        await message.delete()
+#@bot.event
+#async def on_typing(channel, user, when):
+    #if user.id == 178976168622424065:
+        #message = await channel.send('I see you typing, Jacob 👀')
+        #await asyncio.sleep(1.00)
+        #await message.delete()
 #endregion
 
 
