@@ -1,6 +1,7 @@
 # DiscordBot.py
 
 #region Imports
+from random import randint
 from RinasAssistant import *
 #endregion
 
@@ -38,6 +39,118 @@ voiceCode = 'en'
         #message = await channel.send('I see you typing, Jacob 👀')
         #await asyncio.sleep(1.00)
         #await message.delete()
+#endregion
+
+
+#region Wikipedia
+
+@bot.command(name='wiki')
+async def wiki(ctx, *, text):  
+    try:
+        params = {
+            'action': 'query',
+            'list': 'search',
+            'srsearch': text,
+            'format': 'json'
+        }
+
+        api_url = "https://en.wikipedia.org/w/api.php"
+        api_url = api_url + "?origin=*"
+        for key in params.keys():
+            api_url = api_url + '&' + key + '=' + params[key]
+
+        r = requests.get(api_url)
+        data = json.loads(r.text)
+
+        resultNum = randint(0,len(data['query']['search']) - 1)
+
+        if len(data['query']['search'][resultNum]['snippet']) > 2:
+            result = cleanhtml(data['query']['search'][resultNum]['snippet'][0:3500], re.compile('<.*?>') )
+            await ctx.send(result)
+        else:
+            await ctx.send('Snippet Error')
+    except:
+        await ctx.send('Wiki Error')
+
+@bot.command(name='wiki-image')
+async def wiki_image(ctx, *, text):  
+    try:
+        params = {
+            'action': 'query',
+            'list': 'allimages',
+            'aiprefix': text,
+            'format': 'json'
+        }
+
+        api_url = "https://en.wikipedia.org/w/api.php"
+        api_url = api_url + "?origin=*"
+        for key in params.keys():
+            api_url = api_url + '&' + key + '=' + params[key]
+
+        r = requests.get(api_url)
+        data = json.loads(r.text)
+
+        resultNum = randint(0,len(data['query']['allimages']) - 1)
+
+        await ctx.send(data['query']['allimages'][resultNum]['url'])
+    except:
+        await ctx.send('🤪')
+
+def cleanhtml(raw_html, cleaner):
+    cleantext = re.sub(cleaner, '', raw_html)
+    return cleantext
+
+#endregion
+
+
+#region ASCII ART
+
+#@bot.command(name='ascii')
+#async def ascii(ctx, *, text):  
+#    try:
+#        api_url = "http://api.textart.io/img2txt.json"
+#        urllib.request.urlretrieve(text, filename) 
+#
+#        _body = {
+#            'image': 'https://upload.wikimedia.org/wikipedia/en/0/04/SandC_Shame.jpg'
+#        }
+#
+#        r = requests.post(api_url,data=_body)
+#        data = json.loads(r.text)
+#
+#        await ctx.send(r.text)
+#    except:
+#        await ctx.send('No Image, try using dashes between words')
+
+@bot.command(name='ascii')
+async def ascii(ctx, *, text):  
+    with webdriver.Chrome() as driver:
+        await ctx.send("PROCESSING")
+        wait = WebDriverWait(driver, 10)
+        driver.get("https://www.ascii-art-generator.org/")
+
+        driver.find_element(By.ID, "fileupfield-url").send_keys(text + Keys.TAB)
+
+        driver.find_element(By.ID, "numberfield-width").send_keys("60" + Keys.TAB)
+
+        driver.find_element(By.ID, "fbut").send_keys(Keys.ENTER)
+
+        wait = WebDriverWait(driver, 10)
+        notLoaded = True
+        while notLoaded: #dont ever write something like this in real code it's awful
+            try:
+                driver.find_element(By.ID, "result-preview-wrap")
+                notLoaded = False
+            except:
+                notLoaded = True
+
+        el = driver.find_element(By.ID, "result-preview-wrap").text
+        #txt = driver.find_element(By.ID, "result-preview-wrap")
+        
+        await ctx.send('```' + el + '```')
+        #.send_keys("cheese" + Keys.RETURN)
+
+
 #endregion
 
 

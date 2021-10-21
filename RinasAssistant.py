@@ -9,12 +9,16 @@ from discord.ext import commands
 from discord.opus import Encoder
 from dotenv import load_dotenv
 import os.path
-import gtts
 import js2py #JavaScript -> Python converter
 import youtube_dl
 import pyxivapi
 from pyxivapi.models import Filter, Sort
 import requests
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.expected_conditions import presence_of_element_located
 import json
 import codecs
 from collections import OrderedDict
