@@ -8,6 +8,8 @@ from RinasAssistant import *
 #region Startup & Globals
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
+SPOTIFY_ID = os.getenv('SPOTIFY_ID')
+SPOTIFY_SECRET = os.getenv('SPOTIFY_SECRET')
 atexit.register(HelperFunctions.exit_handler)
 
 intents = discord.Intents().all()
@@ -18,19 +20,117 @@ bot = commands.Bot(command_prefix=['!','Rina-'], intents=intents)
 
 q = Queue(maxsize = 32)
 voice_channel = None
-voiceCode = 'en'
+voiceCode = 'fr'
 #endregion
 
+MAX_PLAYLIST_SIZE = 20
+nameQ = Queue(maxsize = MAX_PLAYLIST_SIZE)
+
+ffmpeg_options = {
+    'options': '-vn'
+}
+
+SPOTIFY_TOKEN = ''
+SPOTIFY = ''
+
+def spotify_token_retrieve():
+    global SPOTIFY_TOKEN
+    global SPOTIFY
+    global SPOTIFY_ID
+    global SPOTIFY_SECRET
+
+    s = SPOTIFY_ID + ':' + SPOTIFY_SECRET
+    s = s.encode('ascii')
+    s = base64.b64encode(s)
+    s = s.decode('ascii')
+    rx = requests.post('https://accounts.spotify.com/api/token', headers={'Authorization':'Basic ' + s, 'Content-Type': 'application/x-www-form-urlencoded'},data={'grant_type':'client_credentials', 'scope':'streaming'})
+
+    if rx.status_code == 200 or rx.status_code == 403:
+        SPOTIFY_TOKEN = json.loads(rx.text)['access_token']
+
+    auth_manager = SpotifyClientCredentials(SPOTIFY_ID, SPOTIFY_SECRET)
+    SPOTIFY = spotipy.Spotify(auth_manager=auth_manager)
+
+spotify_token_retrieve()
 
 #region General Messages
-#@bot.event
-#async def on_message(message):
-#    if message.author == bot.user:
-#        return
-#    if message.author.id == 178976168622424065:
-#        await message.add_reaction('<:emoji_for_bri_ish_meatballs:882041429906571264>')
-#
-#    await bot.process_commands(message)
+@bot.event
+async def on_message(message):
+    if message.author == bot.user:
+       return
+    elif message.content.lower() == 'hello rina' or message.content.lower() == 'hey rina'or message.content.lower() == 'hi rina':
+
+        responseArray = ['Hello ', 'Hey ', 'Hi ', 'heyyyyyyyyyyy ']
+
+        text = responseArray[randint(0, len(responseArray) - 1)]
+
+        id = message.author.id
+        if id == 210798139320434690:
+            text += "Weston "
+        elif id == 178976168622424065:
+            text += "Jacob "
+        elif id == 181866295891984384:
+            text += "Jack "    
+        elif id == 199626966717038592:
+            text += "Olive "
+        elif id == 331608394203136003:
+            text += "Abbi "
+
+        emoteArray = ['😋','😊','😄','😂','😏']
+        
+        text += emoteArray[randint(0, len(emoteArray) - 1)]
+
+        await message.channel.send(text)
+
+    elif message.content.lower() == 'bye rina' or message.content.lower() == 'goodbye rina'or message.content.lower() == 'good bye rina':
+
+        responseArray = ['Bye ', 'Goodbye ', 'Love you ', 'I will miss you ']
+
+        text = responseArray[randint(0, len(responseArray) - 1)]
+
+        id = message.author.id
+        if id == 210798139320434690:
+            text += "Weston "
+        elif id == 178976168622424065:
+            text += "Jacob "
+        elif id == 181866295891984384:
+            text += "Jack "    
+        elif id == 199626966717038592:
+            text += "Olive "
+        elif id == 331608394203136003:
+            text += "Abbi "
+
+        emoteArray = ['😋','😊','😄','😂','😏']
+        
+        text += emoteArray[randint(0, len(emoteArray) - 1)]
+
+        await message.channel.send(text)
+
+    elif message.content.lower() == 'hewwo wina':
+
+        responseArray = ['UwU hewwo ', 'OwO hewwo ']
+
+        text = responseArray[randint(0, len(responseArray) - 1)]
+
+        id = message.author.id
+        if id == 210798139320434690:
+            text += "Weston "
+        elif id == 178976168622424065:
+            text += "Jacob "
+        elif id == 181866295891984384:
+            text += "Jack "    
+        elif id == 199626966717038592:
+            text += "Olive "
+        elif id == 331608394203136003:
+            text += "Abbi "
+
+        emoteArray = ['😽']
+        
+        text += emoteArray[randint(0, len(emoteArray) - 1)]
+
+        await message.channel.send(text)
+
+    await bot.process_commands(message)
 
 # 178976168622424065 Jacob, Jack 181866295891984384, Olive 199626966717038592, Weston 210798139320434690, Abbi 331608394203136003
 #@bot.event
@@ -65,7 +165,7 @@ async def wiki(ctx, *, text):
         resultNum = randint(0,len(data['query']['search']) - 1)
 
         if len(data['query']['search'][resultNum]['snippet']) > 2:
-            result = cleanhtml(data['query']['search'][resultNum]['snippet'][0:3500], re.compile('<.*?>') )
+            result = cleanhtml(data['query']['search'][resultNum]['snippet'][0:1998], re.compile('<.*?>') )
             await ctx.send(result)
         else:
             await ctx.send('Snippet Error')
@@ -124,7 +224,7 @@ def cleanhtml(raw_html, cleaner):
 
 @bot.command(name='ascii')
 async def ascii(ctx, *, text):  
-    with webdriver.Chrome() as driver:
+    with webdriver.Chrome(executable_path=r'C:\Users\Administrator\Desktop\RinaSawayamaEvolved\RinaSawayamaEvolved\WebDriver\chromedriver.exe') as driver:
         await ctx.send("PROCESSING")
         wait = WebDriverWait(driver, 10)
         driver.get("https://www.ascii-art-generator.org/")
@@ -147,10 +247,64 @@ async def ascii(ctx, *, text):
         el = driver.find_element(By.ID, "result-preview-wrap").text
         #txt = driver.find_element(By.ID, "result-preview-wrap")
         
-        await ctx.send('```' + el + '```')
+        await ctx.send('```' + el[0:1960] + '```')
         #.send_keys("cheese" + Keys.RETURN)
 
 
+@bot.command(name='cum-meter')
+async def cum_meter(ctx):  
+        recieved_message = (await ctx.channel.history(limit=2, oldest_first=False).flatten())[1]
+        # 178976168622424065 Jacob, Jack 181866295891984384, Olive 199626966717038592, Weston 210798139320434690, Abbi 331608394203136003
+        text = ''
+        id = recieved_message.author.id
+        if id == 210798139320434690:
+            text += "Cum Level on Weston's message: "
+        elif id == 178976168622424065:
+            text += "Cum Level on Jacob's message: "
+        elif id == 181866295891984384:
+            text += "Cum Level on Jack's message: "    
+        elif id == 199626966717038592:
+            text += "Cum Level on Olive's message: "
+        elif id == 331608394203136003:
+            text += "Cum Level on Abbi's message: "
+        else :
+            text += "Cum Level on my message: "
+
+        text += '\n'
+
+        level = randint(1,20)
+
+        for x in range(level):
+            text += '⬜'
+
+        for x in range(20 - level):
+            text += '⬛' 
+
+        text += ' ' + str(level * 5) + '%'
+
+        await ctx.send(text)
+
+@bot.command(name='hello')
+async def hello(ctx):  
+        # 178976168622424065 Jacob, Jack 181866295891984384, Olive 199626966717038592, Weston 210798139320434690, Abbi 331608394203136003
+        text = 'Hello '
+        id = ctx.author.id
+        if id == 210798139320434690:
+            text += "Weston "
+        elif id == 178976168622424065:
+            text += "Jacob"
+        elif id == 181866295891984384:
+            text += "Jack"    
+        elif id == 199626966717038592:
+            text += "Olive"
+        elif id == 331608394203136003:
+            text += "Abbi"
+        else :
+            text += ""
+
+        text += '😊'
+
+        await ctx.send(text)
 #endregion
 
 
@@ -344,7 +498,7 @@ async def tts(ctx, *, message):
     a_file=discord.File(buff, f"{message}.wav")
 
     byt = buff.getvalue()
-    player = FFmpegPCMAudio(byt, pipe=True)
+    player = FFmpegPCMAudio_FIX(byt, pipe=True)
 
     server = ctx.message.guild
     global voice_channel
@@ -392,7 +546,7 @@ async def queue(ctx):
     await ctx.send(s)
 
 @bot.command(name='download', help='Plays a song with a predownload from YouTube')
-async def download(ctx,url):
+async def download(ctx, *,url):
     server = ctx.message.guild
     global voice_channel
     voice_channel = server.voice_client
@@ -418,6 +572,34 @@ async def play(ctx, *, url):
             if(q.qsize() == 1 and not(voice_channel.is_playing())):
                 voice_channel.play(source=q.get(), after=lambda x: check_queue(x))
             await ctx.send('**Added Audio:** {}'.format(player.title))
+
+@bot.command(name='play-spotify', help='Streams a song directly from Spotify')
+async def play(ctx, *, track):
+    server = ctx.message.guild
+    global voice_channel
+    voice_channel = server.voice_client
+
+    async with ctx.typing():
+        player = await SpotifySource.from_track_name(track)
+        if not player == None:
+            q.put(player)
+            if(q.qsize() == 1 and not(voice_channel.is_playing())):
+                voice_channel.play(source=q.get(), after=lambda x: check_queue(x))
+            await ctx.send('**Added Audio:** {}'.format(player.title))
+
+async def spotify_find(track):
+    api_url = 'https://api.spotify.com/v1/search?type=track&include_external=audio&limit=1&q='
+    api_url += track
+
+    spotify_token_retrieve()
+
+    response = requests.get(api_url,headers={'Authorization': 'Bearer ' + SPOTIFY_TOKEN, 'Content-Type': 'application/json'})
+    data = json.loads(response.text)
+    track_url = data['tracks']['items'][0]['external_urls']['spotify']
+
+    #response = requests.get(track_url,headers={'Authorization': 'Bearer ' + SPOTIFY_TOKEN, 'Content-Type': 'application/json'})
+
+    return FFmpegPCMAudio_FIX(track_url, pipe=True)
 
 @bot.command(name='pause', help='This command pauses the song')
 async def pause(ctx):
@@ -481,42 +663,30 @@ async def ensure_voice(ctx):
 def check_queue(x):
     print(x)
     if(q.qsize() > 0):
+        #ytdl.cache.remove()
         voice_channel.play(source=q.get(), after=lambda x: check_queue(x))    
 #endregion
 
 
 #region Youtube-DL Functionality
-yt_dlp.utils.bug_reports_message = lambda: ''
 
 ytdl_format_options = {
-    'format': 'bestaudio/best',
-    'outtmpl': 'TempDownloads/%(extractor)s-%(id)s-%(title)s.%(ext)s',
     'cachedir': False,
+    'format': 'bestaudio/best',
+    'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
+    'restrictfilenames': True,
+    'noplaylist': True,
     'nocheckcertificate': True,
-    'external_downloader': 'native',
-    'keepvideo': False,
-    'simulate': True,
-    'geo_bypass': True,
+    'ignoreerrors': False,
+    'logtostderr': False,
     'quiet': True,
     'no_warnings': True,
-    'ingnoreerrors': True,
-    'source_address': '0.0.0.0',
     'default_search': 'auto',
-    'noplaylist': True,
-    'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'm4a',
-            'preferredquality': '96k',
-    }],
+    'source_address': '0.0.0.0' # bind to ipv4 since ipv6 addresses cause issues sometimes
 }
 
-ffmpeg_options = {
-    'options': '-vn'
-}
-
+yt_dlp.utils.bug_reports_message = lambda: ''
 ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
-MAX_PLAYLIST_SIZE = 20
-nameQ = Queue(maxsize = MAX_PLAYLIST_SIZE)
 
 class YTDLSource(discord.PCMVolumeTransformer):
     def __init__(self, source, *, data, volume=0.5):
@@ -527,7 +697,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
     @classmethod
     async def from_url(cls, ctx, url, *, loop=None, stream=False):
-        #youtube-dl --rm-cache-dir
+        global ytdl
         loop = loop or asyncio.get_event_loop()
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download = not stream))
         if 'entries' in data:
@@ -540,12 +710,33 @@ class YTDLSource(discord.PCMVolumeTransformer):
                 await ctx.send("Cannot load a playlist with more than 20 songs")
         else:
             filename = data['url'] if stream else ytdl.prepare_filename(data)
-            ret = cls(discord.FFmpegPCMAudio(filename), data=data)
+            ret = cls(FFmpegPCMAudio_FIX(filename, **ffmpeg_options), data=data)
             if ret.title == 'videoplayback':
                 await asyncio.sleep(0.1) # FOR NAMING PLAYLIST SONGS
                 ret.title = nameQ.get()
             return ret
 #endregion
+
+class SpotifySource(discord.PCMVolumeTransformer):
+    def __init__(self, source, *, data, volume=0.5):
+        super().__init__(source, volume)
+        self.data = data
+        self.title = data['tracks']['items'][0]['name']
+        self.url = data['tracks']['items'][0]['href']
+
+    @classmethod
+    async def from_track_name(cls, track):
+        api_url = 'https://api.spotify.com/v1/search?type=track&include_external=audio&limit=1&q='
+        api_url += track
+
+        spotify_token_retrieve()
+
+        response = requests.get(api_url,headers={'Authorization': 'Bearer ' + SPOTIFY_TOKEN, 'Content-Type': 'application/json'})
+        data = json.loads(response.text)
+        filename = data['tracks']['items'][0]['href']
+        x = SPOTIFY.track(data['tracks']['items'][0]['id'])
+        ret = cls(FFmpegPCMAudio_FIX(x['href'], **ffmpeg_options), data=data)
+        return ret
 
 @bot.command(name="commands", description="Returns all commands available")
 async def commands(ctx):

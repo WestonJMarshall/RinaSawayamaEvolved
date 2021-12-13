@@ -3,6 +3,7 @@ from pathlib import Path
 import atexit
 import subprocess
 import shlex
+import base64
 import discord
 import io
 from discord.ext import commands
@@ -29,6 +30,10 @@ from gtts import gTTS
 import gtts
 import yt_dlp
 from queue import Queue
+from concurrent.futures import ThreadPoolExecutor
+import spotipy
+from spotipy.oauth2 import SpotifyClientCredentials
+
 
 
 class HelperFunctions:
@@ -49,7 +54,7 @@ class HelperFunctions:
     def exit_handler():
         HelperFunctions.remove_downloads("TempDownloads/")
 		
-class FFmpegPCMAudio(discord.AudioSource):
+class FFmpegPCMAudio_FIX(discord.AudioSource):
     def __init__(self, source, *, executable='ffmpeg', pipe=False, stderr=None, before_options=None, options=None):
         stdin = None if not pipe else source
         args = [executable]
