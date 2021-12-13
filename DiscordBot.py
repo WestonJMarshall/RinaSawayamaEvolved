@@ -342,6 +342,24 @@ async def spongebob(ctx, *, text):
             isLower = True
     await ctx.send(response)
 
+@bot.command(name='horoscope')
+async def horoscope(ctx, *, text):  
+    try:
+        api_url = "https://www.ganeshaspeaks.com/horoscopes/daily-horoscope/"
+        api_url = api_url + text + '/'
+
+        r = requests.get(api_url)
+        data = r.text
+
+        srch = '<p id="horo_content">'
+        start = data.find(srch) + len(srch)
+        end = data[start:len(data) - start].find('</p>')
+        message = data[start:start + end]
+
+        await ctx.send(text.upper() + '\n' + "Today's date: " + str(date.today()) + '\n' + message)
+    except:
+        await ctx.send('Whatever you typed in for the sign was wrong')
+
 @bot.command(name='ffxiv-lore')
 async def ffxivLore(ctx, *, text):
     global ffxivClient
@@ -560,7 +578,7 @@ async def download(ctx, *,url):
             await ctx.send('**Added Audio:** {}'.format(player.title))
 
 @bot.command(name='play', help='Streams a song directly from YouTube')
-async def play(ctx, *, url):
+async def play(ctx, *, url="https://www.youtube.com/watch?v=dQw4w9WgXcQ"):
     server = ctx.message.guild
     global voice_channel
     voice_channel = server.voice_client
@@ -574,7 +592,7 @@ async def play(ctx, *, url):
             await ctx.send('**Added Audio:** {}'.format(player.title))
 
 @bot.command(name='play-spotify', help='Streams a song directly from Spotify')
-async def play(ctx, *, track):
+async def play_spotify(ctx, *, track):
     server = ctx.message.guild
     global voice_channel
     voice_channel = server.voice_client
@@ -586,20 +604,6 @@ async def play(ctx, *, track):
             if(q.qsize() == 1 and not(voice_channel.is_playing())):
                 voice_channel.play(source=q.get(), after=lambda x: check_queue(x))
             await ctx.send('**Added Audio:** {}'.format(player.title))
-
-async def spotify_find(track):
-    api_url = 'https://api.spotify.com/v1/search?type=track&include_external=audio&limit=1&q='
-    api_url += track
-
-    spotify_token_retrieve()
-
-    response = requests.get(api_url,headers={'Authorization': 'Bearer ' + SPOTIFY_TOKEN, 'Content-Type': 'application/json'})
-    data = json.loads(response.text)
-    track_url = data['tracks']['items'][0]['external_urls']['spotify']
-
-    #response = requests.get(track_url,headers={'Authorization': 'Bearer ' + SPOTIFY_TOKEN, 'Content-Type': 'application/json'})
-
-    return FFmpegPCMAudio_FIX(track_url, pipe=True)
 
 @bot.command(name='pause', help='This command pauses the song')
 async def pause(ctx):
@@ -674,8 +678,8 @@ ytdl_format_options = {
     'cachedir': False,
     'format': 'bestaudio/best',
     'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
-    'restrictfilenames': True,
-    'noplaylist': True,
+    'restrictfilenames': False,
+    'noplaylist': False,
     'nocheckcertificate': True,
     'ignoreerrors': False,
     'logtostderr': False,

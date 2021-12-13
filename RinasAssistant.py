@@ -5,6 +5,7 @@ import subprocess
 import shlex
 import base64
 import discord
+from datetime import date
 import io
 from discord.ext import commands
 from discord.opus import Encoder
