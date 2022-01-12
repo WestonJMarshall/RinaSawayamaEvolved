@@ -2,6 +2,7 @@
 
 #region Imports
 from random import randint
+from shutil import Error
 from RinasAssistant import *
 #endregion
 
@@ -23,7 +24,7 @@ voice_channel = None
 voiceCode = 'fr'
 #endregion
 
-MAX_PLAYLIST_SIZE = 20
+MAX_PLAYLIST_SIZE = 16
 nameQ = Queue(maxsize = MAX_PLAYLIST_SIZE)
 
 ffmpeg_options = {
@@ -32,6 +33,11 @@ ffmpeg_options = {
 
 SPOTIFY_TOKEN = ''
 SPOTIFY = ''
+
+@bot.event
+async def on_ready():
+    await bot.change_presence(activity=discord.Game(name="ur mum"))
+
 
 def spotify_token_retrieve():
     global SPOTIFY_TOKEN
@@ -65,18 +71,9 @@ async def on_message(message):
         text = responseArray[randint(0, len(responseArray) - 1)]
 
         id = message.author.id
-        if id == 210798139320434690:
-            text += "Weston "
-        elif id == 178976168622424065:
-            text += "Jacob "
-        elif id == 181866295891984384:
-            text += "Jack "    
-        elif id == 199626966717038592:
-            text += "Olive "
-        elif id == 331608394203136003:
-            text += "Abbi "
+        text += id_name_split(id) + ' '
 
-        emoteArray = ['😋','😊','😄','😂','😏']
+        emoteArray = ['😋','😊','😄','😂','😏','😍']
         
         text += emoteArray[randint(0, len(emoteArray) - 1)]
 
@@ -84,47 +81,44 @@ async def on_message(message):
 
     elif message.content.lower() == 'bye rina' or message.content.lower() == 'goodbye rina'or message.content.lower() == 'good bye rina':
 
-        responseArray = ['Bye ', 'Goodbye ', 'Love you ', 'I will miss you ']
+        responseArray = ['Bye ', 'Goodbye ', 'Love you ', 'I will miss you ', 'bye bye ', 'bye bye ']
 
         text = responseArray[randint(0, len(responseArray) - 1)]
 
         id = message.author.id
-        if id == 210798139320434690:
-            text += "Weston "
-        elif id == 178976168622424065:
-            text += "Jacob "
-        elif id == 181866295891984384:
-            text += "Jack "    
-        elif id == 199626966717038592:
-            text += "Olive "
-        elif id == 331608394203136003:
-            text += "Abbi "
+        text += id_name_split(id) + ' '
 
-        emoteArray = ['😋','😊','😄','😂','😏']
+        emoteArray = ['😋','😊','😄','😂','😏','😅','😍','😞','😢','😣','😨','😭', '🅱', '⁉']
         
         text += emoteArray[randint(0, len(emoteArray) - 1)]
 
         await message.channel.send(text)
 
-    elif message.content.lower() == 'hewwo wina':
+    elif message.content.lower() == 'hewwo wina' or message.content.lower() == 'hewwo rina':
 
-        responseArray = ['UwU hewwo ', 'OwO hewwo ']
+        responseArray = ['UwU hewwo ', 'OwO hewwo ', 'I think this is a little cringe ']
 
         text = responseArray[randint(0, len(responseArray) - 1)]
 
         id = message.author.id
-        if id == 210798139320434690:
-            text += "Weston "
-        elif id == 178976168622424065:
-            text += "Jacob "
-        elif id == 181866295891984384:
-            text += "Jack "    
-        elif id == 199626966717038592:
-            text += "Olive "
-        elif id == 331608394203136003:
-            text += "Abbi "
+        text += id_name_split(id) + ' '
 
         emoteArray = ['😽']
+        
+        text += emoteArray[randint(0, len(emoteArray) - 1)]
+
+        await message.channel.send(text)
+
+    elif message.content.lower().__contains__('thank you rina') or message.content.lower().__contains__('thanks rina') or message.content.lower().__contains__('thankyou rina'):
+
+        responseArray = ['... ']
+
+        text = responseArray[randint(0, len(responseArray) - 1)]
+
+        #id = message.author.id
+        #text += id_name_split(id) + ' '
+
+        emoteArray = ['🌚']
         
         text += emoteArray[randint(0, len(emoteArray) - 1)]
 
@@ -141,6 +135,23 @@ async def on_message(message):
         #await message.delete()
 #endregion
 
+def id_name_split(id):
+    text = ''
+    if id == 210798139320434690:
+        text += "Weston "
+    elif id == 178976168622424065:
+        text += "Jacob "
+    elif id == 181866295891984384:
+        text += "Jack "    
+    elif id == 199626966717038592:
+        text += "Olive "
+    elif id == 331608394203136003:
+        text += "Abbi "
+    return text
+
+@bot.command(name='status')
+async def status(ctx, *, text):  
+    await bot.change_presence(activity=discord.Game(name=text))
 
 #region Wikipedia
 
@@ -205,23 +216,6 @@ def cleanhtml(raw_html, cleaner):
 
 #region ASCII ART
 
-#@bot.command(name='ascii')
-#async def ascii(ctx, *, text):  
-#    try:
-#        api_url = "http://api.textart.io/img2txt.json"
-#        urllib.request.urlretrieve(text, filename) 
-#
-#        _body = {
-#            'image': 'https://upload.wikimedia.org/wikipedia/en/0/04/SandC_Shame.jpg'
-#        }
-#
-#        r = requests.post(api_url,data=_body)
-#        data = json.loads(r.text)
-#
-#        await ctx.send(r.text)
-#    except:
-#        await ctx.send('No Image, try using dashes between words')
-
 @bot.command(name='ascii')
 async def ascii(ctx, *, text):  
     with webdriver.Chrome(executable_path=r'C:\Users\Administrator\Desktop\RinaSawayamaEvolved\RinaSawayamaEvolved\WebDriver\chromedriver.exe') as driver:
@@ -272,7 +266,7 @@ async def cum_meter(ctx):
 
         text += '\n'
 
-        level = randint(1,20)
+        level = randint(0,20)
 
         for x in range(level):
             text += '⬜'
@@ -281,28 +275,6 @@ async def cum_meter(ctx):
             text += '⬛' 
 
         text += ' ' + str(level * 5) + '%'
-
-        await ctx.send(text)
-
-@bot.command(name='hello')
-async def hello(ctx):  
-        # 178976168622424065 Jacob, Jack 181866295891984384, Olive 199626966717038592, Weston 210798139320434690, Abbi 331608394203136003
-        text = 'Hello '
-        id = ctx.author.id
-        if id == 210798139320434690:
-            text += "Weston "
-        elif id == 178976168622424065:
-            text += "Jacob"
-        elif id == 181866295891984384:
-            text += "Jack"    
-        elif id == 199626966717038592:
-            text += "Olive"
-        elif id == 331608394203136003:
-            text += "Abbi"
-        else :
-            text += ""
-
-        text += '😊'
 
         await ctx.send(text)
 #endregion
@@ -357,8 +329,17 @@ async def horoscope(ctx, *, text):
         message = data[start:start + end]
 
         await ctx.send(text.upper() + '\n' + "Today's date: " + str(date.today()) + '\n' + message)
+
+        #if ctx.message.author.id == 331608394203136003 and text.upper() == 'CANCER':
+        #    await ctx.send(text.upper() + '\n' + "Today's date: " + str(date.today()) + '\n' + "Today's failures are inevitable and you will have no hope for redemption. Good luck.")
+        #else:
+        #    await ctx.send(text.upper() + '\n' + "Today's date: " + str(date.today()) + '\n' + message)
     except:
         await ctx.send('Whatever you typed in for the sign was wrong')
+
+@bot.command(name='tarot')
+async def tarot(ctx):  
+    await ctx.send(file=discord.File('Tarot/' + str(randint(1,77)) + '.jpg'))
 
 @bot.command(name='ffxiv-lore')
 async def ffxivLore(ctx, *, text):
@@ -498,15 +479,40 @@ async def randomChar(ctx):
 
     await ctx.send(emoji)
 
-@bot.command(name='first-message')
-async def first_message(ctx, channel: discord.TextChannel = None): 
-    await ctx.message.delete()  
+@bot.command(name='random-message')
+async def random_message(ctx, channel: discord.TextChannel = None): 
     if channel is None:
         channel = ctx.channel
-    first_message = (await channel.history(limit=1, oldest_first=True).flatten())[0]
-    embed = discord.Embed(description=first_message.content)
-    embed.add_field(name="First Message", value=f"[Jump]({first_message.jump_url})")
-    await ctx.send(embed=embed)
+    async with ctx.typing():
+        d = random_date("4/24/2021 1:30 PM", str(date.today().month) + '/' + str(date.today().day) + '/' + str(date.today().year) + " 12:00 AM", random.random())
+        d = parser.parse(d)
+        messages = await channel.history(limit=1, around=d , oldest_first=False,).flatten()
+    try:
+        rand_message = messages[0]
+        embed = discord.Embed(description=rand_message.content)
+        embed.add_field(name="Random Message", value=f"[Jump]({rand_message.jump_url})")
+        await ctx.send(embed=embed)
+    except:
+        await ctx.message.delete()  
+
+def random_date(start, end, prop):
+    return str_time_prop(start, end, '%m/%d/%Y %I:%M %p', prop)
+
+def str_time_prop(start, end, time_format, prop):
+    """Get a time at a proportion of a range of two formatted times.
+
+    start and end should be strings specifying times formatted in the
+    given format (strftime-style), giving an interval [start, end].
+    prop specifies how a proportion of the interval to be taken after
+    start.  The returned time will be in the specified format.
+    """
+
+    stime = time.mktime(time.strptime(start, time_format))
+    etime = time.mktime(time.strptime(end, time_format))
+
+    ptime = stime + prop * (etime - stime)
+
+    return time.strftime(time_format, time.localtime(ptime))
 
 #endregion
 
@@ -588,6 +594,7 @@ async def play(ctx, *, url="https://www.youtube.com/watch?v=dQw4w9WgXcQ"):
         if not player == None:
             q.put(player)
             if(q.qsize() == 1 and not(voice_channel.is_playing())):
+                await ensure_voice(ctx)
                 voice_channel.play(source=q.get(), after=lambda x: check_queue(x))
             await ctx.send('**Added Audio:** {}'.format(player.title))
 
@@ -663,6 +670,109 @@ async def ensure_voice(ctx):
 #endregion
 
 
+wordleWord = ''
+wordleDefinition = ''
+wordleActive = False
+wordleGuesses = 0
+valueArrCache = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+
+@bot.command(name='wordle', help='Play Wordle')
+async def wordle(ctx):
+    global wordleActive 
+    if not wordleActive:
+        async with ctx.typing():
+            await ctx.send("**🍥Welcome to Wordle Rina Edition©🍥**")
+
+            url = "https://wordsapiv1.p.rapidapi.com/words/"
+            querystring = {"random":"true","letters":5,"hasDetails":"typeOf"}
+            headers = {
+                'x-rapidapi-host': "wordsapiv1.p.rapidapi.com",
+                'x-rapidapi-key': "b68f6a2307mshd055943a83ec8c8p1cd7e3jsn1bec9e8fec00"
+                }
+            response = requests.request("GET", url, headers=headers, params=querystring)
+            data = json.loads(response.text)
+            #await ctx.send(data["word"])
+
+            global wordleWord 
+            wordleWord = data["word"]
+
+            global wordleDefinition 
+            wordleDefinition = data["results"][0]["definition"]
+
+            await ctx.send("**🍥Your word has been generated!🍥**")
+            await ctx.send("**🍥Use !guess to guess a 5 letter word!🍥**")
+
+        wordleActive = True  
+        global wordleGuesses 
+        wordleGuesses = 0   
+    else:
+        await ctx.send("**🍥Wordle Rina Edition© is currently running! Guesses taken so far: " + str(wordleGuesses) + "🍥**")
+        await ctx.send("**🍥Use !wordle-end to quit🍥**")
+
+@bot.command(name='wordle-quit', help='End Wordle')
+async def wordle_quit(ctx):
+    global wordleActive
+    wordleActive = False
+
+@bot.command(name='guess', help='End Wordle')
+async def wordle_guess(ctx, * ,text):
+    global wordleActive
+    if wordleActive:
+        if len(text) == 5:
+            language = "en-us"
+            word_id = text
+            url = "https://od-api.oxforddictionaries.com:443/api/v2/lemmas/" + language + "/" + word_id.lower()
+            response = requests.get(url, headers={"app_id": "7ffea31f", "app_key": "58e0caf11c3edf8553a2c8312ded7a41"})
+
+            if response.status_code == 404:
+                await ctx.send("**🍥Not a word in the dictionary, try again!🍥**")
+            else:
+                global wordleWord
+                global valueArrCache
+                global wordleGuesses
+                await ctx.send("**🍥Guess #" + str(wordleGuesses + 1) + "🍥**")
+                count = 0
+                for letter in text:
+                    cVal = count + (wordleGuesses * 5)
+                    if wordleWord.__contains__(letter):
+                        valueArrCache[cVal] = 1
+                    if wordleWord[count] == text[count]:
+                        valueArrCache[cVal] = 2
+                    count += 1
+                win = False
+                if all(flag == 2 for (flag) in valueArrCache[wordleGuesses * 5: (wordleGuesses * 5) + 5]):
+                    win = True
+                wordleGuesses += 1
+                count = 0
+                outStr = ''
+                for val in valueArrCache:
+                    if val == 0:
+                        outStr += '⬜'
+                    elif val == 1:
+                        outStr += '🟨'
+                    else:
+                        outStr += '🟩'
+                    count += 1
+                    if count % 5 == 0:
+                        outStr += '\n'
+                await ctx.send(outStr) 
+                if win:
+                    await ctx.send("**🍥Congratulations! You Win!🍥**") 
+                    await ctx.send("Wordle " + str(wordleGuesses) + "/6") 
+                    await ctx.send("**🍥Word was: " + wordleWord + "🍥**") 
+                    await ctx.send("**🍥Definition: " + wordleDefinition + "🍥**") 
+                    wordleActive = False
+                elif wordleGuesses == 6:
+                    await ctx.send("**🍥You Lose WOW!🍥**") 
+                    await ctx.send("**🍥Word was: " + wordleWord + "🍥**") 
+                    await ctx.send("**🍥Definition: " + wordleDefinition + "🍥**") 
+                    wordleActive = False
+        else:
+           await ctx.send("**🍥You must guess a 5 letter word🍥**") 
+    else:
+        await ctx.send("**🍥Wordle Rina Edition© is not currently running🍥**")
+
+
 #region Helper Functions
 def check_queue(x):
     print(x)
@@ -675,6 +785,21 @@ def check_queue(x):
 #region Youtube-DL Functionality
 
 ytdl_format_options = {
+    'cachedir': False,
+    'format': '250',
+    'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
+    'restrictfilenames': False,
+    'noplaylist': False,
+    'nocheckcertificate': True,
+    'ignoreerrors': False,
+    'logtostderr': False,
+    'quiet': True,
+    'no_warnings': True,
+    'default_search': 'auto',
+    'source_address': '0.0.0.0' # bind to ipv4 since ipv6 addresses cause issues sometimes
+}
+
+ytdl_format_options_BACKUP = {
     'cachedir': False,
     'format': 'bestaudio/best',
     'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
@@ -696,30 +821,74 @@ class YTDLSource(discord.PCMVolumeTransformer):
     def __init__(self, source, *, data, volume=0.5):
         super().__init__(source, volume)
         self.data = data
-        self.title = data.get('title')
+        self.title = data.get('title') + '\n [[Duration: ' + str(data.get('duration') / 60).split('.')[0] + ':' + str(data.get('duration') % 60)[0:2] + ']]'
         self.url = data.get('url')
 
     @classmethod
     async def from_url(cls, ctx, url, *, loop=None, stream=False):
-        global ytdl
-        loop = loop or asyncio.get_event_loop()
-        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download = not stream))
-        if 'entries' in data:
-            data = data['entries'] #THIS IS FOR PLAYLISTS, JUST LOOPS THE PLAY FUNCTION
-            if len(data) < MAX_PLAYLIST_SIZE:
-                for d in data:
-                    nameQ.put(d['title'])
-                    await play(ctx,url=d['url'])
+        try:
+            global ytdl
+            loop = loop or asyncio.get_event_loop()
+            data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download = not stream))
+            if 'entries' in data and len(data['entries']) == 1:
+                data = data['entries'][0]
+            if 'entries' in data:
+                data = data['entries'] #THIS IS FOR PLAYLISTS, JUST LOOPS THE PLAY FUNCTION
+                if len(data) < MAX_PLAYLIST_SIZE:
+                    for d in data:
+                        nameQ.put(d['title'])
+                        await play(ctx,url=d['url'])
+                else:
+                    await ctx.send("Cannot load a playlist with more than 20 songs")
             else:
-                await ctx.send("Cannot load a playlist with more than 20 songs")
-        else:
-            filename = data['url'] if stream else ytdl.prepare_filename(data)
-            ret = cls(FFmpegPCMAudio_FIX(filename, **ffmpeg_options), data=data)
-            if ret.title == 'videoplayback':
-                await asyncio.sleep(0.1) # FOR NAMING PLAYLIST SONGS
-                ret.title = nameQ.get()
-            return ret
+                filename = data['url'] if stream else ytdl.prepare_filename(data)
+                if data['duration'] > 850:
+                    ret = cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
+                else:
+                    ret = cls(FFmpegPCMAudio_FIX(filename, **ffmpeg_options), data=data)
+                if ret.title == 'videoplayback':
+                    await asyncio.sleep(0.1) # FOR NAMING PLAYLIST SONGS
+                    ret.title = nameQ.get()
+                return ret
+        except Exception as e: #BACKUP WITH LESS STRICT SETTINGS
+            try:
+                await ctx.send('running backup...')
+                if str(e).__contains__('Requested format is not available'):
+                    tdlTEMP = yt_dlp.YoutubeDL(ytdl_format_options_BACKUP)
+                    loop = loop or asyncio.get_event_loop()
+                    data = await loop.run_in_executor(None, lambda: tdlTEMP.extract_info(url, download = not stream))
+                    if 'entries' in data and len(data['entries']) == 1:
+                        data = data['entries'][0]
+                    if 'entries' in data:
+                        data = data['entries'] #THIS IS FOR PLAYLISTS, JUST LOOPS THE PLAY FUNCTION
+                        if len(data) < MAX_PLAYLIST_SIZE:
+                            for d in data:
+                                nameQ.put(d['title'])
+                                await play(ctx,url=d['url'])
+                        else:
+                            await ctx.send("Cannot load a playlist with more than 20 songs")
+                    else:
+                        filename = data['url'] if stream else tdlTEMP.prepare_filename(data)
+                        if data['duration'] > 520:
+                            ret = cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
+                        else:
+                            ret = cls(FFmpegPCMAudio_FIX(filename, **ffmpeg_options), data=data)
+                        if ret.title == 'videoplayback':
+                            await asyncio.sleep(0.1) # FOR NAMING PLAYLIST SONGS
+                            ret.title = nameQ.get()
+                        return ret
+            except Exception as e:
+                await ctx.send('IM TOO STUPID FOR THIS 😂\n' + str(e))
+
+            
+
+
 #endregion
+
+#11,881,337
+#251
+
+#4,895,501
 
 class SpotifySource(discord.PCMVolumeTransformer):
     def __init__(self, source, *, data, volume=0.5):
