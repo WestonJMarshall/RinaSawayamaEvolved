@@ -36,7 +36,7 @@ from queue import Queue
 from concurrent.futures import ThreadPoolExecutor
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
-
+from WordleWords import *
 
 
 class HelperFunctions:

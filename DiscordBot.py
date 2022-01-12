@@ -36,7 +36,7 @@ SPOTIFY = ''
 
 @bot.event
 async def on_ready():
-    await bot.change_presence(activity=discord.Game(name="ur mum"))
+    await bot.change_presence(activity=discord.Game(name="with Dennis"))
 
 
 def spotify_token_retrieve():
@@ -691,10 +691,11 @@ async def wordle(ctx):
                 }
             response = requests.request("GET", url, headers=headers, params=querystring)
             data = json.loads(response.text)
-            #await ctx.send(data["word"])
 
             global wordleWord 
             wordleWord = data["word"]
+
+            await ctx.send(wordleWord)
 
             global wordleDefinition 
             wordleDefinition = data["results"][0]["definition"]
@@ -707,12 +708,38 @@ async def wordle(ctx):
         wordleGuesses = 0   
     else:
         await ctx.send("**🍥Wordle Rina Edition© is currently running! Guesses taken so far: " + str(wordleGuesses) + "🍥**")
-        await ctx.send("**🍥Use !wordle-end to quit🍥**")
+        await ctx.send("**🍥Use !wordle-quit to quit🍥**")
+
+@bot.command(name='wordle-easy', help='Play Wordle')
+async def wordle_easy(ctx):
+    global wordleActive 
+    if not wordleActive:
+        async with ctx.typing():
+            await ctx.send("**🍥Welcome to Wordle Rina Edition©🍥**")
+
+            global wordleWord 
+            spl = wordleWordsList[0].split()
+            wordleWord = spl[randint(0,len(spl) - 1)]
+            wordleWord = wordleWord.lower()
+
+            global wordleDefinition 
+            wordleDefinition = "No definition on normal mode"
+
+            await ctx.send("**🍥Your word has been generated!🍥**")
+            await ctx.send("**🍥Use !guess to guess a 5 letter word!🍥**")
+
+        wordleActive = True  
+        global wordleGuesses 
+        wordleGuesses = 0   
+    else:
+        await ctx.send("**🍥Wordle Rina Edition© is currently running! Guesses taken so far: " + str(wordleGuesses) + "🍥**")
+        await ctx.send("**🍥Use !wordle-quit to quit🍥**")
 
 @bot.command(name='wordle-quit', help='End Wordle')
 async def wordle_quit(ctx):
     global wordleActive
     wordleActive = False
+    await ctx.send("**🍥Wordle Rina Edition© has ended!🍥**")
 
 @bot.command(name='guess', help='End Wordle')
 async def wordle_guess(ctx, * ,text):
@@ -724,9 +751,10 @@ async def wordle_guess(ctx, * ,text):
             url = "https://od-api.oxforddictionaries.com:443/api/v2/lemmas/" + language + "/" + word_id.lower()
             response = requests.get(url, headers={"app_id": "7ffea31f", "app_key": "58e0caf11c3edf8553a2c8312ded7a41"})
 
-            if response.status_code == 404:
+            if response.status_code == 404 and not text.lower() == wordleWord:
                 await ctx.send("**🍥Not a word in the dictionary, try again!🍥**")
             else:
+                text = text.lower()
                 global wordleWord
                 global valueArrCache
                 global wordleGuesses
