@@ -676,10 +676,12 @@ wordleDefinition = ''
 wordleActive = False
 wordleGuesses = 0
 valueArrCache = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+alpha = ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Z', 'X', 'C', 'V', 'B', 'N', 'M']
+alphaEmoji = ['🇶', '🇼', '🇪', '🇷', '🇹', '🇾', '🇺', '🇮', '🇴', '🇵', '🇦', '🇸', '🇩', '🇫', '🇬', '🇭', '🇯', '🇰', '🇱', '🇿', '🇽', '🇨', '🇻', '🇧', '🇳', '🇲']
 
 @bot.command(name='wordle', help='Play Wordle')
 async def wordle(ctx):
-    global wordleActive 
+    global wordleActive
     if not wordleActive:
         async with ctx.typing():
             await ctx.send("**🍥Welcome to Wordle Rina Edition©🍥**")
@@ -708,13 +710,15 @@ async def wordle(ctx):
         wordleActive = True  
         global wordleGuesses 
         wordleGuesses = 0   
+        global alphaEmoji
+        alphaEmoji = ['🇶', '🇼', '🇪', '🇷', '🇹', '🇾', '🇺', '🇮', '🇴', '🇵', '🇦', '🇸', '🇩', '🇫', '🇬', '🇭', '🇯', '🇰', '🇱', '🇿', '🇽', '🇨', '🇻', '🇧', '🇳', '🇲']
     else:
         await ctx.send("**🍥Wordle Rina Edition© is currently running! Guesses taken so far: " + str(wordleGuesses) + "🍥**")
         await ctx.send("**🍥Use !wordle-quit to quit🍥**")
 
 @bot.command(name='wordle-easy', help='Play Wordle')
 async def wordle_easy(ctx):
-    global wordleActive 
+    global wordleActive
     if not wordleActive:
         async with ctx.typing():
             await ctx.send("**🍥Welcome to Wordle Rina Edition©🍥**")
@@ -732,7 +736,9 @@ async def wordle_easy(ctx):
 
         wordleActive = True  
         global wordleGuesses 
-        wordleGuesses = 0   
+        wordleGuesses = 0 
+        global alphaEmoji
+        alphaEmoji = ['🇶', '🇼', '🇪', '🇷', '🇹', '🇾', '🇺', '🇮', '🇴', '🇵', '🇦', '🇸', '🇩', '🇫', '🇬', '🇭', '🇯', '🇰', '🇱', '🇿', '🇽', '🇨', '🇻', '🇧', '🇳', '🇲']
     else:
         await ctx.send("**🍥Wordle Rina Edition© is currently running! Guesses taken so far: " + str(wordleGuesses) + "🍥**")
         await ctx.send("**🍥Use !wordle-quit to quit🍥**")
@@ -747,6 +753,8 @@ async def wordle_quit(ctx):
 @bot.command(name='guess', help='End Wordle')
 async def wordle_guess(ctx, * ,text):
     global wordleActive
+    global alpha
+    global alphaEmoji
     if wordleActive:
         if len(text) == 5:
             language = "en-us"
@@ -766,8 +774,11 @@ async def wordle_guess(ctx, * ,text):
                     cVal = count + (wordleGuesses * 5)
                     if wordleWord.__contains__(letter):
                         valueArrCache[cVal] = 1
-                    if wordleWord[count] == text[count]:
+                    elif wordleWord[count] == text[count]:
                         valueArrCache[cVal] = 2
+                    else:
+                        index = alpha.index(letter.upper())
+                        alphaEmoji[index] = "  " + alpha[index] + "  "
                     count += 1
                 win = False
                 if all(flag == 2 for (flag) in valueArrCache[wordleGuesses * 5: (wordleGuesses * 5) + 5]):
@@ -775,6 +786,7 @@ async def wordle_guess(ctx, * ,text):
                 wordleGuesses += 1
                 count = 0
                 outStr = ''
+
                 for val in valueArrCache:
                     if val == 0:
                         outStr += '⬜'
@@ -784,6 +796,18 @@ async def wordle_guess(ctx, * ,text):
                         outStr += '🟩'
                     count += 1
                     if count % 5 == 0:
+                        alphaRange = range(0)
+                        if count == 5:
+                            outStr += "           "
+                            alphaRange = range(10)
+                        if count == 15:
+                            outStr += "               "
+                            alphaRange = range(10, 19)
+                        if count == 25:
+                            outStr += "                      "
+                            alphaRange = range(19, 26)
+                        for i in alphaRange:
+                            outStr += " " + alphaEmoji[i]
                         outStr += '\n'
                 await ctx.send(outStr) 
                 if win:
@@ -793,7 +817,7 @@ async def wordle_guess(ctx, * ,text):
                     await ctx.send("**🍥Definition: " + wordleDefinition + "🍥**") 
                     wordleActive = False
                 elif wordleGuesses == 6:
-                    await ctx.send("**🍥You Lose WOW!🍥**") 
+                    await ctx.send("**🍥You Lose WOW!🍥**" if random.random() >= 0.05 else "**🍥 " + ctx.message.author.mention + " are you serious? THAT was your last guess?🍥**") 
                     await ctx.send("**🍥Word was: " + wordleWord + "🍥**") 
                     await ctx.send("**🍥Definition: " + wordleDefinition + "🍥**") 
                     wordleActive = False
