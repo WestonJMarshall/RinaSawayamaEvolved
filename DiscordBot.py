@@ -97,6 +97,7 @@ bot.add_cog(RinaCore(bot))
 bot.add_cog(RinaFinalFantasy(bot, ffxivClient))
 bot.add_cog(RinaAudio(bot))
 bot.add_cog(RinaWordle(bot))
+bot.add_cog(RinaScrabble(bot))
 
 try:
     bot.loop.run_until_complete(bot.start(TOKEN))

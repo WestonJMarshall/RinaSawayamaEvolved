@@ -1,11 +1,9 @@
 from RinasAssistant import *
+from GameWords import *
 
 class RinaWordle(commands.Cog):
 
-    wordle_start = None
-
     bot = None
-    length = 5
     wordleWord = ''
     wordleDefinition = ''
     wordleActive = False
@@ -146,4 +144,76 @@ class RinaWordle(commands.Cog):
         await ctx.send("**🍥Wordle Rina Edition© has ended!🍥**")
 
 
-  #Scrabble
+class RinaScrabble(commands.Cog):
+
+    scrabbleActive = False
+    scrabblePlayers = 0
+    scrabbleRotation = 0
+    scrabbleTurn = 0
+    players = []
+    board = []
+
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command(name='scrabble')
+    async def scrabble(self, ctx):
+        if not self.scrabbleActive and self.scrabblePlayers == 0:
+            async with ctx.typing():
+                await ctx.send("**🌟Welcome to Scrabble Rina Edition©🌟**")
+                await ctx.send("**🌟" + ctx.message.author.nick + " has joined the game🌟**")
+                self.players.append(ctx.message.author)
+                self.scrabblePlayers += 1
+                await ctx.send("**🌟Use !scrabble to join the game!🌟**")
+                await ctx.send("**🌟When 2-4 players have joined, start the game with !scrabble-start🌟**")
+        elif not self.scrabbleActive and self.scrabblePlayers < 4:
+            await ctx.send("**🌟" + ctx.message.author.nick + " has joined the game🌟**")
+            self.players.append(ctx.message.author)
+            self.scrabblePlayers += 1
+            await ctx.send("**🌟" + str(self.scrabblePlayers) + " waiting to play!🌟**")
+        elif not self.scrabbleActive:
+            await ctx.send("**🌟Sorry, already 4 players!🌟**")
+        else:
+            await ctx.send("**🌟Game currently in progress, " + str(self.scrabblePlayers) + " Players, Turn #" + str(self.scrabbleTurn) + "🌟**")
+            await ctx.send("**🌟!scrabble-quit to quit🌟**")
+
+    @commands.command(name='scrabble-start')
+    async def scrabble_start(self, ctx):
+        if self.scrabbleActive:
+            await ctx.send("**🌟Game currently in progress, " + str(self.scrabblePlayers) + " Players, Turn #" + str(self.scrabbleTurn) + "🌟**")
+        else:
+            if not self.players.__contains__(ctx.message.author):
+                await ctx.send("**🌟You are not a player in this Scrabble game and cannot start the game🌟**")
+            elif self.scrabblePlayers > 4 or self.scrabblePlayers < 2:
+                await ctx.send("**🌟There are not between 2-4 memebers in the Scrabble lobby!🌟**")
+            else:
+                await ctx.send("**🌟Starting Game!🌟**")
+                self.scrabbleTurn = 1
+                self.scrabbleActive = True
+                await ctx.send("**🌟Player 1 is " + self.players[self.scrabbleRotation].nick + "🌟**")
+                await ctx.send("**🌟Use !scrabble-word + {STARTING TILE} + {DIRECTION ←↑→↓} + {WORD}🌟**")
+
+    @commands.command(name='scrabble-word')
+    async def scrabble_word(self, ctx, * , text):
+        if not self.scrabbleActive:
+            await ctx.send("**🌟No game running!🌟**")
+        else:
+            if not self.players[self.scrabbleRotation] == ctx.message.author:
+                await ctx.send("**🌟It is not your turn!🌟**")
+                await ctx.send("**🌟Current player is " + self.players[self.scrabbleRotation].nick + "🌟**")
+            else:
+                print("not implemented")
+
+    def knockout():
+        print("not implemented")
+
+    def show_letters():
+        print("not implemented")
+
+    @commands.command(name='scrabble-quit')
+    async def scrabble_quit(self, ctx):
+        await ctx.send("**🌟Game ended!🌟**")
+        self.scrabbleActive = False
+        self.scrabblePlayers = 0
+        self.scrabbleTurn = 0
+
