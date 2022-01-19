@@ -36,26 +36,11 @@ from queue import Queue
 from concurrent.futures import ThreadPoolExecutor
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
+from asyncore import loop
+from fileinput import close
+from random import randint
+from shutil import Error
 from WordleWords import *
-
-
-class HelperFunctions:
-    @staticmethod
-    def remove_downloads(path):
-        #Check if folder path exists, create one if it doesn't
-        root = Path().absolute()
-        full = root.joinpath(path)
-        if not(os.path.exists(full) and os.path.isdir(full)):
-            os.makedirs(full)
-        #Delete all files in the path
-        files = os.listdir(full)
-        for file in files:
-            fileFull = full.joinpath(file)
-            os.remove(fileFull)
-
-    @staticmethod
-    def exit_handler():
-        HelperFunctions.remove_downloads("TempDownloads/")
 		
 class FFmpegPCMAudio_FIX(discord.AudioSource):
     def __init__(self, source, *, executable='ffmpeg', pipe=False, stderr=None, before_options=None, options=None):
@@ -94,17 +79,3 @@ class FFmpegPCMAudio_FIX(discord.AudioSource):
 
         self._process = None
 
-
-#LEGACY CODE
-def RiTaAccess():
-    #Get RiTa Source code
-    jsCode = requests.get("https://unpkg.com/rita")
-
-    #Write it to a JavaScript file
-    file = open("RiTa.js", "w") 
-    file.write(jsCode.text) 
-    file.close() 
-
-    #Convert to python code in a temporary variable
-    tempRiTaCode = js2py.eval_js6("RiTa.js")
-    return tempRiTaCode
