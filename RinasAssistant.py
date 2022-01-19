@@ -40,6 +40,7 @@ from asyncore import loop
 from fileinput import close
 from random import randint
 from shutil import Error
+from PIL import Image
 		
 class FFmpegPCMAudio_FIX(discord.AudioSource):
     def __init__(self, source, *, executable='ffmpeg', pipe=False, stderr=None, before_options=None, options=None):
