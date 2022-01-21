@@ -146,19 +146,17 @@ class RinaWordle(commands.Cog):
 
 class RinaScrabble(commands.Cog):
 
-    letters = ['a','b','c','d','e','f','g','h','i','j','l','m','n','o']
+    letters = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o']
     numbers = ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15']
 
     lettersPoints = {'a':1,'b':3,'c':3,'d':2,'e':1,'f':4,'g':2,'h':4,'i':1,'j':8,'k':5,'l':1,'m':3,'n':1,'o':1,'p':3,'q':10,'r':1,'s':1,'t':1,'u':1,'v':4,'w':4,'x':8,'y':4,'z':10}
     lettersCounts = {'a':9,'b':2,'c':2,'d':4,'e':12,'f':2,'g':3,'h':2,'i':9,'j':1,'k':1,'l':4,'m':2,'n':6,'o':8,'p':2,'q':1,'r':6,'s':4,'t':6,'u':4,'v':2,'w':2,'x':1,'y':2,'z':1}
 
     class ScrabblePlayer:
-        discordInfo = None
-        points = 0
-        currentLetters = []
-
         def __init__(self, discordInfo):
             self.discordInfo = discordInfo
+            self.points = 0
+            self.currentLetters = []
 
     boardRenderStaticPath = "ScrabblePieces/ScrabbleBoardStatic.png"
     boardRenderDynamicPath = "ScrabblePieces/ScrabbleBoardDynamic.png"
@@ -179,13 +177,13 @@ class RinaScrabble(commands.Cog):
     def init_bag(self):
         self.letterBag = []
         for entry in self.lettersCounts:
-            for _ in range(self.lettersCounts[[entry]]):
+            for _ in range(self.lettersCounts[entry]):
                 self.letterBag += entry
 
     def init_board_render(self):
         dynamic = Image.open(self.boardRenderDynamicPath)
         static = Image.open(self.boardRenderStaticPath)
-        static.paste(dynamic)
+        dynamic.paste(static)
         dynamic.save(self.boardRenderDynamicPath)
 
     @commands.command(name='scrabble')
@@ -216,7 +214,8 @@ class RinaScrabble(commands.Cog):
         if self.scrabbleActive:
             await ctx.send("**🌟Game currently in progress, " + str(self.scrabblePlayers) + " Players, Turn #" + str(self.scrabbleTurn) + "🌟**")
         else:
-            if len([author for author in self.players if author == ctx.message.author]) == 0:
+            match = [author for author in self.players if author.discordInfo == ctx.message.author]
+            if len(match) == 0:
                 await ctx.send("**🌟You are not a player in this Scrabble game and cannot start the game🌟**")
             elif self.scrabblePlayers > 4 or self.scrabblePlayers < 2:
                 await ctx.send("**🌟There are not between 2-4 memebers in the Scrabble lobby!🌟**")
@@ -224,8 +223,20 @@ class RinaScrabble(commands.Cog):
                 await ctx.send("**🌟Starting Game!🌟**")
                 self.scrabbleTurn = 1
                 self.scrabbleActive = True
+                for player in self.players:
+                    for _ in range(7):
+                        grab = self.letterBag[randint(0,len(self.letterBag) - 1)]
+                        player.currentLetters.append(grab)
+                        self.letterBag.remove(grab)
                 await ctx.send("**🌟Player 1 is " + self.players[self.scrabbleRotation].discordInfo.nick + "🌟**")
-                await ctx.send("**🌟Use !scrabble-word + {STARTING TILE} + {DIRECTION ←↑→↓} + {WORD}🌟**")
+                await ctx.send("**🌟Use !scrabble-word + {STARTING TILE} + {DIRECTION →↓} + {WORD}🌟**")
+                embeded = discord.Embed(description='Scrabble')
+                for player in self.players:
+                    pLetters = ''
+                    for letter in player.currentLetters:
+                        pLetters += letter + " "
+                    embeded.add_field(name=player.discordInfo.nick + "'s letters:", value="||" + pLetters + "||")
+                await ctx.send(embed=embeded, file=discord.File(open(self.boardRenderDynamicPath, 'rb')))
 
     @commands.command(name='scrabble-word')
     async def scrabble_word(self, ctx, * , text):
@@ -259,50 +270,56 @@ class RinaScrabble(commands.Cog):
                             await ctx.send(validityResult[0])
                             return
                         else:
-                            for i in range(len(text)):
-                                self.board[tiles[i]] = text[i]
-                                self.board_render(text[i], tiles[i])
-                                embeded = discord.Embed(description='Scrabble')
-                                for player in self.players:
-                                    embeded.add_field(name=player.discordInfo.nick + "'s letters:", value="||" + str(player.letters) + "||")
-                                await ctx.send(embeded, file=discord.File(open(self.boardRenderDynamicPath, 'rb')))
+                            index = 0
+                            for letter in ''.join(i for i in validityResult[1][0][0] if not i.isdigit()):
+                                if not validityResult[2].__contains__(tiles[index]) and self.players[self.scrabbleRotation].currentLetters.__contains__(letter):
+                                    self.players[self.scrabbleRotation].currentLetters.remove(letter)
+                                    if not len(self.letterBag) == 0:
+                                        grab = self.letterBag[randint(0,len(self.letterBag) - 1)]
+                                        self.players[self.scrabbleRotation].currentLetters.append(grab)
+                                        self.letterBag.remove(grab)
+                                    else:
+                                        if len(self.players[self.scrabbleRotation].currentLetters) == 0:
+                                            self.scrabbleCompletedPlayers += 1
+                                            if self.scrabbleCompletedPlayers == self.scrabblePlayers:
+                                                self.scrabble_complete(ctx)
+                                index += 1                                
+                            for i in range(len(textParts[2])):
+                                self.board[tiles[i]] = textParts[2][i]
+                                self.board_render(textParts[2][i], tiles[i])
+                            embeded = discord.Embed(description='Scrabble')
+                            for player in self.players:
+                                pLetters = ''
+                                for letter in player.currentLetters:
+                                    pLetters += letter + " "
+                                embeded.add_field(name=player.discordInfo.nick + "'s letters:", value="||" + pLetters + "||")
+                            await ctx.send(embed=embeded, file=discord.File(open(self.boardRenderDynamicPath, 'rb')))
                             await ctx.send("**🌟Successful Entry! Words Created:🌟**")
                             totalPoints = 0
                             for entry in validityResult[1]:
-                                await ctx.send(entry[0] + ' Points: ' + str(entry[1]))
+                                await ctx.send(''.join(i for i in entry[0] if not i.isdigit()) + ' - Points: ' + str(entry[1]))
                                 totalPoints += entry[1]
                             self.players[self.scrabbleRotation].points += totalPoints
-                            for letter in validityResult[1][len(validityResult[1]) - 1][0]:
-                                self.players[self.scrabbleRotation].currentLetters.remove(letter)
-                                if not len(self.letterBag) == 0:
-                                    grab = self.letterBag[randint(0,len(self.letterBag))]
-                                    self.players[self.scrabbleRotation].currentLetters.append(grab)
-                                    self.letterBag.remove(grab)
-                                else:
-                                    if len(self.players[self.scrabbleRotation].currentLetters) == 0:
-                                        self.scrabbleCompletedPlayers += 1
-                                        if self.scrabbleCompletedPlayers == self.scrabblePlayers:
-                                            self.scrabble_complete(ctx)
+
                             self.scrabbleRotation += 1
                             if self.scrabbleRotation >= self.scrabblePlayers:
                                 self.scrabbleRotation = 0
+                                self.scrabbleTurn += 1
                             while len(self.players[self.scrabbleRotation].currentLetters) == 0:
                                 self.scrabbleRotation += 1
                                 if self.scrabbleRotation >= self.scrabblePlayers:
                                     self.scrabbleRotation = 0
-                            await ctx.send("**🌟Player " + (self.scrabbleRotation + 1) + " is " + self.players[self.scrabbleRotation].discordInfo.nick + "🌟**")
+                                    self.scrabbleTurn += 1
+                            await ctx.send("**🌟Player " + str(self.scrabbleRotation + 1) + " is " + self.players[self.scrabbleRotation].discordInfo.nick + "🌟**")
                     else:
                         await ctx.send(validityResult[0])
 
     def validate_placement(self, startingTile, direction, word):
         tiles = []
         tiles.append(startingTile)
-
-        for _ in word[0 : len(word) - 1]:
+        for _ in range(len(word) - 1):
             nextTile = tiles[len(tiles) - 1]
-
             tileComponents = re.split('(\d+)', nextTile)
-
             if direction.__contains__('→'):
                 if tileComponents[0] == 'o':
                     return ["**🌟→ is not a valid direction for this word, not enough space!🌟**", None]
@@ -313,45 +330,46 @@ class RinaScrabble(commands.Cog):
                     return ["**🌟↓ is not a valid direction for this word, not enough space!🌟**", None]
                 tileComponents[1] = self.numbers[self.numbers.index(tileComponents[1]) + 1]
                 tiles.append(tileComponents[0] + tileComponents[1])
-
         if self.scrabbleTurn == 1 and self.scrabbleRotation == 0:
             if not tiles.__contains__('h8'):
-                return "**🌟The first word placed must go through the center tile (H8)!🌟**"
+                return ["**🌟The first word placed must go through the center tile (H8)!🌟**", None]
         
-        for i in range(len(tiles)):
+        for i in range(len(word)):
             if not self.board[tiles[i]] == word[i] and not self.players[self.scrabbleRotation].currentLetters.__contains__(word[i]):
                 return ["**🌟You do not have the letters to make that word!🌟**", tiles]
-
         return ["valid", tiles]
 
     def validate_words(self, tiles, word, direction):   
         allWords = []     
+        playerTiles = []
         for i in range(len(tiles)):
+            if not self.board[tiles[i]].__contains__('*'):
+                playerTiles.append(tiles[i])
             validArr = []
+            initPoints = self.lettersPoints[word[i]]
+            wordAdd = ''
+            if self.board[tiles[i]] ==  '*w2':
+                wordAdd = '2'
+            elif self.board[tiles[i]] ==  '*w3':
+                wordAdd = '3'
+            elif self.board[tiles[i]] ==  '*l2':
+                initPoints = initPoints * 2
+            elif self.board[tiles[i]] ==  '*l3':
+                initPoints = initPoints * 3
             if direction.__contains__('↓'):
                 if i == 0 and self.board[tiles[i]].__contains__('*'):
-                    initPoints = self.lettersPoints[self.lettersPoints.index(word[[i]])]
-                    wordAdd = ''
-                    if self.board[tiles[i]] ==  '*w2':
-                        wordAdd = '2'
-                    elif self.board[tiles[i]] ==  '*w3':
-                        wordAdd = '3'
-                    elif self.board[tiles[i]] ==  '*l2':
-                        initPoints * 2
-                    elif self.board[tiles[i]] ==  '*l3':
-                        initPoints * 3
-                    validArr = [self.validate_word_branch_left(tiles[i], word[i] + wordAdd, initPoints, direction, word, tiles), self.validate_word_branch_up(tiles[i], word[i] + wordAdd, initPoints, direction, word, tiles)]
+                    validArr = [self.validate_word_branch_left(tiles[i], tiles[i], word[i] + wordAdd, initPoints, direction, word, tiles), self.validate_word_branch_up(tiles[i], tiles[i], word[i] + wordAdd, initPoints, direction, word, tiles)]
                 elif i == 0:
-                    validArr = [self.validate_word_branch_up(tiles[i], word[i] + wordAdd, initPoints, direction, word, tiles)]
-                else:
-                    validArr = [self.validate_word_branch_left(tiles[i], word[i] + wordAdd, initPoints, direction, word, tiles)]
+                    validArr = [self.validate_word_branch_up(tiles[i], tiles[i], word[i] + wordAdd, initPoints, direction, word, tiles)]
+                elif self.board[tiles[i]].__contains__('*'):
+                    validArr = [self.validate_word_branch_left(tiles[i], tiles[i], word[i] + wordAdd, initPoints, direction, word, tiles)]
             else:
                 if i == 0 and self.board[tiles[i]].__contains__('*'):
-                    validArr = [self.validate_word_branch_left(tiles[i], word[i] + wordAdd, initPoints, direction, word, tiles), self.validate_word_branch_up(tiles[i], word[i] + wordAdd, initPoints, direction, word, tiles)]
+                    validArr = [self.validate_word_branch_left(tiles[i], tiles[i], word[i] + wordAdd, initPoints, direction, word, tiles), self.validate_word_branch_up(tiles[i], tiles[i], word[i] + wordAdd, initPoints, direction, word, tiles)]
                 elif i == 0:
-                    validArr = [self.validate_word_branch_left(tiles[i], word[i] + wordAdd, initPoints, direction, word, tiles)]
-                else:
-                    validArr = [self.validate_word_branch_up(tiles[i], word[i] + wordAdd, initPoints, direction, word, tiles)]
+                    validArr = [self.validate_word_branch_left(tiles[i], tiles[i], word[i] + wordAdd, initPoints, direction, word, tiles)]
+                elif self.board[tiles[i]].__contains__('*'):
+                    validArr = [self.validate_word_branch_up(tiles[i], tiles[i], word[i] + wordAdd, initPoints, direction, word, tiles)]
 
             if any(x for x in validArr if not x[0] == 'valid'):
                 for x in validArr:  
@@ -361,137 +379,137 @@ class RinaScrabble(commands.Cog):
                 for x in validArr:  
                     if not x[1][0] == "":
                         allWords.append([x[1][0], x[1][1]])
-        coreWordPoints = 0
-        wordPointMultiplier = 1
-        for i in range(len(tiles)):
-            if self.board[tiles[i]] ==  '*w2':
-                wordPointMultiplier *= 2
-            elif self.board[tiles[i]] ==  '*w3':
-                wordPointMultiplier *= 3
-            elif self.board[tiles[i]] ==  '*l2':
-                coreWordPoints += self.lettersPoints[self.lettersPoints.index(word[[i]])] * 2
-            elif self.board[tiles[i]] ==  '*l3':
-                coreWordPoints += self.lettersPoints[self.lettersPoints.index(word[[i]])] * 3
-            else:
-                coreWordPoints += self.lettersPoints[self.lettersPoints.index(word[[i]])]
-        coreWordPoints *= wordPointMultiplier
-        allWords.append([word, coreWordPoints])
-        return ["valid", allWords]
+        if len(playerTiles) == len(tiles) and not (self.scrabbleTurn == 1 and self.scrabbleRotation == 0):
+            return ["**🌟Your word is not connected to another word!🌟**", None]
+        print(allWords)
+        return ["valid", allWords, playerTiles]
                 
-    def validate_word_branch_left(self, startTile, buildWord, buildPoints, direction, inputWord, inputTiles):
-        tileComponents = re.split('(\d+)', startTile)
+    def validate_word_branch_left(self, startTile, nextTile, buildWord, buildPoints, direction, inputWord, inputTiles):
+        print("left " + buildWord)
+        tileComponents = re.split('(\d+)', nextTile)
         if not tileComponents[0] == 'a':
             nextTile = self.letters[self.letters.index(tileComponents[0]) - 1] + tileComponents[1]
             if not self.board[nextTile].__contains__('*'):
-                buildWord.insert(0, self.board[nextTile])
+                buildWord = self.insert_str(buildWord, self.board[nextTile], 0)
                 buildPoints += self.lettersPoints[self.board[nextTile]]
-                return self.validate_word_branch_left(nextTile, buildWord)
+                return self.validate_word_branch_left(startTile, nextTile, buildWord, buildPoints, direction, inputWord, inputTiles)
             else:
-                return self.validate_word_branch_right(startTile, buildWord, buildPoints, direction, inputWord, inputTiles)
+                return self.validate_word_branch_right(startTile, nextTile, buildWord, buildPoints, direction, inputWord, inputTiles)
         else:
-            return self.validate_word_branch_right(startTile, buildWord, buildPoints, direction, inputWord, inputTiles)
+            return self.validate_word_branch_right(startTile, nextTile, buildWord, buildPoints, direction, inputWord, inputTiles)
 
-    def validate_word_branch_right(self, startTile, buildWord, buildPoints, direction, inputWord, inputTiles):
-        tileComponents = re.split('(\d+)', startTile)
+    def validate_word_branch_right(self, startTile, nextTile, buildWord, buildPoints, direction, inputWord, inputTiles):
+        print("right " + buildWord)
+        tileComponents = re.split('(\d+)', nextTile)
         if not tileComponents[0] == 'o':
             nextTile = self.letters[self.letters.index(tileComponents[0]) + 1] + tileComponents[1]
             if not self.board[nextTile].__contains__('*'):
-                buildWord.append(self.board[nextTile])
+                buildWord += (self.board[nextTile])
                 buildPoints += self.lettersPoints[self.board[nextTile]]
-                return self.validate_word_branch_right(nextTile, buildWord, buildPoints, direction, inputWord, inputTiles)
+                return self.validate_word_branch_right(startTile, nextTile, buildWord, buildPoints, direction, inputWord, inputTiles)
             elif direction == '→' and inputTiles.__contains__(nextTile):
-                buildWord.append(inputWord[inputTiles.index(nextTile)])
+                buildWord += (inputWord[inputTiles.index(nextTile)])
                 if self.board[nextTile].__contains__('*w2'):
                     buildWord += '2'
                 elif self.board[nextTile].__contains__('*w3'):
                     buildWord += '3'
                 elif self.board[nextTile].__contains__('*l2'):
-                    buildPoints += self.lettersPoints[self.board[nextTile]] * 2
+                    buildPoints += self.lettersPoints[buildWord[len(buildWord) - 1]] * 2
                 elif self.board[nextTile].__contains__('*l3'):
-                    buildPoints += self.lettersPoints[self.board[nextTile]] * 3
+                    buildPoints += self.lettersPoints[buildWord[len(buildWord) - 1]] * 3
                 else:
-                    buildPoints += self.lettersPoints[self.board[nextTile]]
-                return self.validate_word_branch_right(nextTile, buildWord, buildPoints, direction, inputWord, inputTiles)
+                    buildPoints += self.lettersPoints[buildWord[len(buildWord) - 1]]
+                return self.validate_word_branch_right(startTile, nextTile, buildWord, buildPoints, direction, inputWord, inputTiles)
             else:
-                if ScrabbleWordList.__contains__(''.join([i for i in buildWord if not i.isdigit()])):
+                testingWord = ''.join(i for i in buildWord if not i.isdigit())
+                print("Right 1 " + testingWord)
+                if ScrabbleWordList.__contains__(testingWord):
                     for letter in buildWord:
                         if letter == '2':
                             buildPoints *= 2
                         elif letter == '3':
                             buildPoints *= 3
                     return ["valid", [buildWord, buildPoints]]
-                elif len(buildWord) == 1:
+                elif len(testingWord) == 1:
                     return ["valid", ["", 0]]
                 else:
                     return ["**🌟" + buildWord + " is not a word in the Rina Scrabble dictionary!🌟**", None]
         else:
-            if ScrabbleWordList.__contains__(''.join([i for i in buildWord if not i.isdigit()])):
+            testingWord = ''.join(i for i in buildWord if not i.isdigit())
+            print("Right 2 " + testingWord)
+            if ScrabbleWordList.__contains__(testingWord):
                 for letter in buildWord:
                     if letter == '2':
                         buildPoints *= 2
                     elif letter == '3':
                         buildPoints *= 3
                 return ["valid", [buildWord, buildPoints]]
-            elif len(buildWord) == 1:
+            elif len(testingWord) == 1:
                 return ["valid", ["", 0]]
             else:
                 return ["**🌟" + buildWord + " is not a word in the Rina Scrabble dictionary!🌟**", None]
 
-    def validate_word_branch_up(self, startTile, buildWord, buildPoints, direction, inputWord, inputTiles):
-        tileComponents = re.split('(\d+)', startTile)
-        if not tileComponents[0] == 'a':
+    def validate_word_branch_up(self, startTile, nextTile, buildWord, buildPoints, direction, inputWord, inputTiles):
+        print("up " + buildWord)
+        tileComponents = re.split('(\d+)', nextTile)
+        if not tileComponents[1] == '1':
             nextTile = tileComponents[0] + self.numbers[self.numbers.index(tileComponents[1]) - 1]
             if not self.board[nextTile].__contains__('*'):
-                buildWord.insert(0, self.board[nextTile])
+                buildWord = self.insert_str(buildWord, self.board[nextTile], 0)
                 buildPoints += self.lettersPoints[self.board[nextTile]]
-                return self.validate_word_branch_up(nextTile, buildWord)
+                return self.validate_word_branch_up(startTile, nextTile, buildWord, buildPoints, direction, inputWord, inputTiles)
             else:
-                return self.validate_word_branch_down(startTile, buildWord, buildPoints, direction, inputWord, inputTiles)
+                return self.validate_word_branch_down(startTile, nextTile, buildWord, buildPoints, direction, inputWord, inputTiles)
         else:
-            return self.validate_word_branch_down(startTile, buildWord, buildPoints, direction, inputWord, inputTiles)
+            return self.validate_word_branch_down(startTile, nextTile, buildWord, buildPoints, direction, inputWord, inputTiles)
 
-    def validate_word_branch_down(self, startTile, buildWord, buildPoints, direction, inputWord, inputTiles):
-        tileComponents = re.split('(\d+)', startTile)
+    def validate_word_branch_down(self, startTile, nextTile, buildWord, buildPoints, direction, inputWord, inputTiles):
+        print("down " + buildWord)
+        tileComponents = re.split('(\d+)', nextTile)
         if not tileComponents[1] == '15':
             nextTile = tileComponents[0] + self.numbers[self.numbers.index(tileComponents[1]) + 1]
             if not self.board[nextTile].__contains__('*'):
-                buildWord.append(self.board[nextTile])
+                buildWord += (self.board[nextTile])
                 buildPoints += self.lettersPoints[self.board[nextTile]]
-                return self.validate_word_branch_down(nextTile, buildWord, buildPoints, direction, inputWord, inputTiles)
+                return self.validate_word_branch_down(startTile, nextTile, buildWord, buildPoints, direction, inputWord, inputTiles)
             elif direction == '↓' and inputTiles.__contains__(nextTile):
-                buildWord.append(inputWord[inputTiles.index(nextTile)])
+                buildWord += (inputWord[inputTiles.index(nextTile)])
                 if self.board[nextTile].__contains__('*w2'):
                     buildWord += '2'
                 elif self.board[nextTile].__contains__('*w3'):
                     buildWord += '3'
                 elif self.board[nextTile].__contains__('*l2'):
-                    buildPoints += self.lettersPoints[self.board[nextTile]] * 2
+                    buildPoints += self.lettersPoints[buildWord[len(buildWord) - 1]] * 2
                 elif self.board[nextTile].__contains__('*l3'):
-                    buildPoints += self.lettersPoints[self.board[nextTile]] * 3
+                    buildPoints += self.lettersPoints[buildWord[len(buildWord) - 1]] * 3
                 else:
-                    buildPoints += self.lettersPoints[self.board[nextTile]]
-                return self.validate_word_branch_down(nextTile, buildWord, buildPoints, direction, inputWord, inputTiles)
+                    buildPoints += self.lettersPoints[buildWord[len(buildWord) - 1]]
+                return self.validate_word_branch_down(startTile, nextTile, buildWord, buildPoints, direction, inputWord, inputTiles)
             else:
-                if ScrabbleWordList.__contains__(buildWord):
+                testingWord = ''.join(i for i in buildWord if not i.isdigit())
+                print("Down 1 " + testingWord)
+                if ScrabbleWordList.__contains__(testingWord):
                     for letter in buildWord:
                         if letter == '2':
                             buildPoints *= 2
                         elif letter == '3':
                             buildPoints *= 3
                     return ["valid", [buildWord, buildPoints]]
-                elif len(buildWord) == 1:
+                elif len(testingWord) == 1:
                     return ["valid", ["", 0]]
                 else:
                     return ["**🌟" + buildWord + " is not a word in the Rina Scrabble dictionary!🌟**", None]
         else:
-            if ScrabbleWordList.__contains__(buildWord):
+            testingWord = ''.join(i for i in buildWord if not i.isdigit())
+            print("Down 2 " + testingWord)
+            if ScrabbleWordList.__contains__(testingWord):
                 for letter in buildWord:
                     if letter == '2':
                         buildPoints *= 2
                     elif letter == '3':
                         buildPoints *= 3
                 return ["valid", [buildWord, buildPoints]]
-            elif len(buildWord) == 1:
+            elif len(testingWord) == 1:
                 return ["valid", ["", 0]]
             else:
                 return ["**🌟" + buildWord + " is not a word in the Rina Scrabble dictionary!🌟**", None]
@@ -523,10 +541,10 @@ class RinaScrabble(commands.Cog):
         boardImage = Image.open(self.boardRenderDynamicPath)
         tileComponents = re.split('(\d+)', tile)
         xPercent = self.letters.index(tileComponents[0]) / 15
-        positionX = (50 * xPercent) + 25
-        yPercent = tileComponents[1] / 15
-        positionY = (50 * yPercent) + 25
-        boardImage.paste(letterImage, (positionX, positionY))
+        positionX = (50 * xPercent * 15) + 25
+        yPercent = int(tileComponents[1]) / 15
+        positionY = (50 * yPercent * 15) - 25
+        boardImage.paste(letterImage, (int(positionX), int(positionY)))
         boardImage.save(self.boardRenderDynamicPath)
 
     @commands.command(name='scrabble-test')
@@ -535,3 +553,6 @@ class RinaScrabble(commands.Cog):
         for _ in range(3):
             embeded.add_field(name=ctx.author.nick + "'s letters:", value="||" + str(['a','b','c']) + "||")
         await ctx.send(embed=embeded, file=discord.File(open(self.boardRenderDynamicPath, 'rb')))
+
+    def insert_str(self, string, str_to_insert, index):
+        return string[:index] + str_to_insert + string[index:]
