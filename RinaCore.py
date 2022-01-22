@@ -229,7 +229,7 @@ class RinaCore(commands.Cog):
         await ctx.send(emojiUTF16)
 
     @commands.command(name='current-emotion')
-    async def emotion(ctx):
+    async def emotion(self, ctx):
         """
         Overview: Take an html hex code for an emoji from an api endpoint,
         convert it to utf-16, and then send it to be displayed as an emote in Discord
