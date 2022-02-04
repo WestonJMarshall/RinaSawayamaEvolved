@@ -217,10 +217,19 @@ class RinaScrabble(commands.Cog):
             match = [author for author in self.players if author.discordInfo == ctx.message.author]
             if len(match) == 0:
                 await ctx.send("**🌟You are not a player in this Scrabble game and cannot start the game🌟**")
-            #elif self.scrabblePlayers > 4 or self.scrabblePlayers < 2:
-                #await ctx.send("**🌟There are not between 2-4 memebers in the Scrabble lobby!🌟**")
+            elif self.scrabblePlayers > 4 or self.scrabblePlayers < 1:
+                await ctx.send("**🌟There are not between 2-4 memebers in the Scrabble lobby!🌟**")
             else:
                 await ctx.send("**🌟Starting Game!🌟**")
+                embeded = discord.Embed(description='Scrabble Rules')
+                embeded.add_field(name='First Turn', value="First word placed must go through center 🟨 tile")
+                embeded.add_field(name='Tiles', value="🟪 3x word score \n🟥 2x word score \n🟨 2x word score \n🟦 2x letter score \n🟩 3x letter score")
+                embeded.add_field(name='6 Letters', value="Using all 6 letters you own in one turn gives 2x points for that turn")
+                embeded.add_field(name='End', value="Game ends when there are no tiles left in the bag and all players have used all of their tiles, or have used !scrabble-surrender to take themselves out  of the game")
+                embeded.add_field(name='Winner', value="The winner is the player with the most points at the end of the game")
+                embeded.add_field(name='Examples', value="g8 → poggers\nf2 ↓ cringe")
+                await ctx.send("**🌟Rules🌟**")
+                await ctx.send(embed=embeded)
                 self.scrabbleTurn = 1
                 self.scrabbleActive = True
                 for player in self.players:
@@ -282,7 +291,7 @@ class RinaScrabble(commands.Cog):
                                         if len(self.players[self.scrabbleRotation].currentLetters) == 0:
                                             self.scrabbleCompletedPlayers += 1
                                             if self.scrabbleCompletedPlayers == self.scrabblePlayers:
-                                                self.scrabble_complete(ctx)
+                                                await self.scrabble_complete(ctx)
                                 index += 1                                
                             for i in range(len(textParts[2])):
                                 self.board[tiles[i]] = textParts[2][i]
@@ -535,7 +544,27 @@ class RinaScrabble(commands.Cog):
                 winner = player
             ctx.send("**🌟" + player.discordInfo.nick + " had " + str(player.points) + " points!🌟**")
         ctx.send("**🌟" + winner.discordInfo.nick + " won the game!!!🌟**")
-        self.scrabble_quit(ctx)
+        await self.scrabble_quit(ctx)
+
+    @commands.command(name='scrabble-surrender')
+    async def scrabble_surrender(self, ctx):
+        if not self.players[self.scrabbleRotation].discordInfo == ctx.message.author:
+            await ctx.send("**🌟It is not your turn!🌟**")
+        else:
+            self.scrabbleCompletedPlayers += 1
+            if self.scrabbleCompletedPlayers == self.scrabblePlayers:
+                await self.scrabble_complete(ctx)
+            else:
+                self.players[self.scrabbleRotation].currentLetters = []
+                self.scrabbleRotation += 1
+                if self.scrabbleRotation >= self.scrabblePlayers:
+                    self.scrabbleRotation = 0
+                    self.scrabbleTurn += 1
+                while len(self.players[self.scrabbleRotation].currentLetters) == 0:
+                    self.scrabbleRotation += 1
+                    if self.scrabbleRotation >= self.scrabblePlayers:
+                        self.scrabbleRotation = 0
+                        self.scrabbleTurn += 1
 
     @commands.command(name='scrabble-quit')
     async def scrabble_quit(self, ctx):
