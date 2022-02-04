@@ -542,8 +542,8 @@ class RinaScrabble(commands.Cog):
         for player in self.players:
             if winner == None or winner.points < player.points:
                 winner = player
-            ctx.send("**🌟" + player.discordInfo.nick + " had " + str(player.points) + " points!🌟**")
-        ctx.send("**🌟" + winner.discordInfo.nick + " won the game!!!🌟**")
+            await ctx.send("**🌟" + player.discordInfo.nick + " had " + str(player.points) + " points!🌟**")
+        await ctx.send("**🌟" + winner.discordInfo.nick + " won the game!!!🌟**")
         await self.scrabble_quit(ctx)
 
     @commands.command(name='scrabble-surrender')
