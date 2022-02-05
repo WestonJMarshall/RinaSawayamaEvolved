@@ -19,10 +19,12 @@ import pyxivapi
 from pyxivapi.models import Filter, Sort
 import requests
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support.expected_conditions import presence_of_element_located
+from selenium.webdriver.support import expected_conditions as EC
 import json
 import codecs
 from collections import OrderedDict
@@ -41,6 +43,9 @@ from fileinput import close
 from random import randint
 from shutil import Error
 from PIL import Image
+
+chrome_options = Options()
+chrome_options.add_argument("--headless")
 		
 class FFmpegPCMAudio_FIX(discord.AudioSource):
     def __init__(self, source, *, executable='ffmpeg', pipe=False, stderr=None, before_options=None, options=None):

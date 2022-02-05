@@ -66,7 +66,7 @@ class RinaCore(commands.Cog):
 
     @commands.command()
     async def ascii(self, ctx, *, text):  
-        with webdriver.Chrome(executable_path=r'C:\Users\Administrator\Desktop\RinaSawayamaEvolved\RinaSawayamaEvolved\WebDriver\chromedriver.exe') as driver:
+        with webdriver.Chrome(executable_path=r'C:\Users\Administrator\Desktop\RinaSawayamaEvolved\RinaSawayamaEvolved\WebDriver\chromedriver.exe', options=chrome_options) as driver:
             await ctx.send("PROCESSING")
             wait = WebDriverWait(driver, 10)
             driver.get("https://www.ascii-art-generator.org/")
