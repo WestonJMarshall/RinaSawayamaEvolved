@@ -1,8 +1,5 @@
 from RinasAssistant import *
 from GameWords import *
-import urllib.parse
-from lxml import html
-from bs4 import BeautifulSoup
 
 class RinaDND(commands.Cog):
 
