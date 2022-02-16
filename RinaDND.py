@@ -1,5 +1,6 @@
 from RinasAssistant import *
 from GameWords import *
+from io import BytesIO
 
 class RinaDND(commands.Cog):
 
@@ -54,3 +55,52 @@ class RinaDND(commands.Cog):
     def cleanhtml(self, raw_html, cleaner):
         cleantext = re.sub(cleaner, '', raw_html)
         return cleantext
+
+    @commands.command(name="mood-board")
+    async def mood_board(self, ctx): 
+        await ctx.send(file=discord.File("MoodBoard/MoodBoardOutput.png"))
+
+    @commands.command(name="mood-board-paste")
+    async def mood_board_paste(self, ctx, *, text): 
+        splitText = text.split()
+        posX = 0
+        posY = 0
+        scale = 1
+        url = "https://bitsofco.de/content/images/2018/12/broken-1.png"
+        for part in splitText:
+            if (part.__contains__("x") or part.__contains__("X")) and not part.__contains__("http") and not part.__contains__("/"):
+                posX = int(re.search(r'\d+', part).group())
+            elif (part.__contains__("y")or part.__contains__("Y")) and not part.__contains__("http") and not part.__contains__("/"):
+                posY = int(re.search(r'\d+', part).group())
+            elif (part.__contains__("scale") or part.__contains__("Scale")) and not part.__contains__("http") and not part.__contains__("/"):
+                result = re.findall(r"[-+]?\d*\.\d+|\d+", part)
+                scale = float(self.convert(result))
+            else:
+                url = part
+        response = requests.get(url)
+        inputImage = Image.open(BytesIO(response.content))
+        outputImage = Image.open("MoodBoard/MoodBoard.png")
+        scaledVal = (round(inputImage.size[0]*scale), round(inputImage.size[1]*scale))
+        inputImage = inputImage.resize(scaledVal)
+        outputImage.paste(inputImage, (posX, posY))
+        outputImage.save("MoodBoard/MoodBoard.png")
+        outputImage.save("MoodBoard/MoodBoardOutput.png")
+        while os.path.getsize("MoodBoard/MoodBoardOutput.png") > 7000000:
+            outputImage.resize(round(outputImage.size[0]*0.75), round(outputImage.size[1]*0.75))
+            outputImage.save("MoodBoard/MoodBoardOutput.png")
+        await ctx.send(file=discord.File("MoodBoard/MoodBoardOutput.png"))
+
+    @commands.command(name="mood-board-reset")
+    async def mood_board_reset(self, ctx): 
+        inputImage = Image.open("MoodBoard/Reset.png")
+        outputImage = Image.open("MoodBoard/MoodBoard.png")
+        outputImage.paste(inputImage, (0, 0))
+        outputImage.save("MoodBoard/MoodBoard.png")
+        outputImage.save("MoodBoard/MoodBoardOutput.png")
+        await ctx.send("Board Reset :)")
+
+    def convert(self, s):
+        new = ""
+        for x in s:
+            new += x 
+        return new

@@ -244,6 +244,6 @@ class YTDLSource(discord.PCMVolumeTransformer):
                             ret.title = nameQ.get()
                         return ret
             except Exception as e:
-                await ctx.send('IM TOO STUPID FOR THIS 😂\n' + str(e))
+                await ctx.send("Can't load song :(")
 
             
