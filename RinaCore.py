@@ -95,7 +95,10 @@ class RinaCore(commands.Cog):
 
     @commands.command(name='cum-meter')
     async def cum_meter(self, ctx):  
-            recieved_message = (await ctx.channel.history(limit=2, oldest_first=False).flatten())[1]
+            recieved_message = ""
+            async for message in ctx.channel.history(limit=2):
+                recieved_message = message
+                break
             # 178976168622424065 Jacob, Jack 181866295891984384, Olive 199626966717038592, Weston 210798139320434690, Abbi 331608394203136003
             text = ''
             id = recieved_message.author.id
@@ -270,7 +273,10 @@ class RinaCore(commands.Cog):
         async with ctx.typing():
             d = self.random_date("4/24/2021 1:30 PM", str(date.today().month) + '/' + str(date.today().day) + '/' + str(date.today().year) + " 12:00 AM", random.random())
             d = parser.parse(d)
-            messages = await channel.history(limit=1, around=d , oldest_first=False,).flatten()
+            messages = []
+            async for message in ctx.channel.history(limit=1, around=d):
+                messages.append(message)
+                break
         try:
             rand_message = messages[0]
             embed = discord.Embed(description=rand_message.content)

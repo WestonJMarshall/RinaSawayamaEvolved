@@ -332,7 +332,7 @@ class RinaScrabble(commands.Cog):
         tiles.append(startingTile)
         for _ in range(len(word) - 1):
             nextTile = tiles[len(tiles) - 1]
-            tileComponents = re.split('(\d+)', nextTile)
+            tileComponents = re.split('(\\d+)', nextTile)
             if direction.__contains__('→'):
                 if tileComponents[0] == 'o':
                     return ["**🌟→ is not a valid direction for this word, not enough space!🌟**", None]
@@ -404,7 +404,7 @@ class RinaScrabble(commands.Cog):
                 
     def validate_word_branch_left(self, startTile, nextTile, buildWord, buildPoints, direction, inputWord, inputTiles):
         print("left " + buildWord + " " + str(buildPoints))
-        tileComponents = re.split('(\d+)', nextTile)
+        tileComponents = re.split('(\\d+)', nextTile)
         if not tileComponents[0] == 'a':
             nextTile = self.letters[self.letters.index(tileComponents[0]) - 1] + tileComponents[1]
             if not self.board[nextTile].__contains__('*'):
@@ -418,7 +418,7 @@ class RinaScrabble(commands.Cog):
 
     def validate_word_branch_right(self, startTile, nextTile, buildWord, buildPoints, direction, inputWord, inputTiles):
         print("right " + buildWord + " " + str(buildPoints))
-        tileComponents = re.split('(\d+)', nextTile)
+        tileComponents = re.split('(\\d+)', nextTile)
         if not tileComponents[0] == 'o':
             nextTile = self.letters[self.letters.index(tileComponents[0]) + 1] + tileComponents[1]
             if not self.board[nextTile].__contains__('*'):
@@ -471,7 +471,7 @@ class RinaScrabble(commands.Cog):
 
     def validate_word_branch_up(self, startTile, nextTile, buildWord, buildPoints, direction, inputWord, inputTiles):
         print("up " + buildWord + " " + str(buildPoints))
-        tileComponents = re.split('(\d+)', nextTile)
+        tileComponents = re.split('(\\d+)', nextTile)
         if not tileComponents[1] == '1':
             nextTile = tileComponents[0] + self.numbers[self.numbers.index(tileComponents[1]) - 1]
             if not self.board[nextTile].__contains__('*'):
@@ -485,7 +485,7 @@ class RinaScrabble(commands.Cog):
 
     def validate_word_branch_down(self, startTile, nextTile, buildWord, buildPoints, direction, inputWord, inputTiles):
         print("down " + buildWord + " " + str(buildPoints))
-        tileComponents = re.split('(\d+)', nextTile)
+        tileComponents = re.split('(\\d+)', nextTile)
         if not tileComponents[1] == '15':
             nextTile = tileComponents[0] + self.numbers[self.numbers.index(tileComponents[1]) + 1]
             if not self.board[nextTile].__contains__('*'):
@@ -581,7 +581,7 @@ class RinaScrabble(commands.Cog):
     def board_render(self, letter, tile):
         letterImage = Image.open("ScrabblePieces/" + letter + ".png")
         boardImage = Image.open(self.boardRenderDynamicPath)
-        tileComponents = re.split('(\d+)', tile)
+        tileComponents = re.split('(\\d+)', tile)
         xPercent = self.letters.index(tileComponents[0]) / 15
         positionX = (50 * xPercent * 15) + 25
         yPercent = int(tileComponents[1]) / 15

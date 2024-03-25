@@ -11,7 +11,7 @@ bot = commands.Bot(command_prefix=['!','Rina-'], intents=intents)
 
 @bot.event
 async def on_ready():
-    await bot.change_presence(activity=discord.Game(name="with Dennis"))
+    await bot.change_presence(activity=discord.Game(name="😂😂"))
 
 @bot.event
 async def on_message(message):
@@ -93,19 +93,21 @@ def id_name_split(id):
         text += "Abbi "
     return text
 
-bot.add_cog(RinaCore(bot))
-bot.add_cog(RinaFinalFantasy(bot, ffxivClient))
-bot.add_cog(RinaDND(bot))
-bot.add_cog(RinaAudio(bot))
-bot.add_cog(RinaWordle(bot))
-bot.add_cog(RinaScrabble(bot))
+async def main():
+    await bot.add_cog(RinaCore(bot))
+    await bot.add_cog(RinaFinalFantasy(bot, ffxivClient))
+    await bot.add_cog(RinaDND(bot))
+    await bot.add_cog(RinaAudio(bot))
+    await bot.add_cog(RinaWordle(bot))
+    await bot.add_cog(RinaScrabble(bot))
+    bot.read_message_history = True
 
-try:
-    bot.loop.run_until_complete(bot.start(TOKEN))
-except KeyboardInterrupt:
-    bot.loop.run_until_complete(bot.close())
-finally:
-    bot.loop.close()
+    try:
+        await bot.start(TOKEN)
+    except KeyboardInterrupt:
+        await bot.close()
+
+asyncio.run(main())
 
 
 

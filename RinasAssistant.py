@@ -13,7 +13,6 @@ from discord.ext import commands
 from discord.opus import Encoder
 from dotenv import load_dotenv
 import os.path
-import js2py #JavaScript -> Python converter
 import youtube_dl
 import pyxivapi
 from pyxivapi.models import Filter, Sort
@@ -38,7 +37,6 @@ from queue import Queue
 from concurrent.futures import ThreadPoolExecutor
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
-from asyncore import loop
 from fileinput import close
 from random import randint
 from shutil import Error
